@@ -7,10 +7,23 @@ import numpy as np
 import polars as pl
 from sklearn.impute import SimpleImputer
 import numpy as np
+import zipfile
+from pathlib import Path
 
-cars = pl.read_csv(r"inputs\vehicles.csv")
-# print(claims.dtypes)
-# print(claims)
+# Path to the .zip file
+zip_file_path = Path(r"inputs\vehicles.csv.zip")
+
+# Directory where you want to extract the .csv file
+output_directory = Path(r"inputs\vehicles_unzipped")
+
+# Unzip the file
+with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+    zip_ref.extractall(output_directory)
+
+print(f"Files extracted to {output_directory}")
+
+cars = pl.read_csv(r"inputs\vehicles_unzipped\vehicles.csv")
+
 # Define a function to check if a column has "Yes" and "No" values and convert to Boolean
 # utlra_cars = cars.filter(pl.col("price")>950_000)
 # utlra_cars.write_excel()
@@ -40,7 +53,7 @@ def null_out_impossible_values(cars,col,upper_col_limit:int)->pl.DataFrame:
 
 def drop_out_impossible_values(cars, col,upper_col_limit):
     cars = cars.with_columns(pl.col(col).cast(pl.Int64))
-    rows_to_nullify = cars.filter(pl.col(col) < upper_col_limit).height
+    rows_to_nullify = cars.filter(pl.col(col) > upper_col_limit).height
 
     cars = cars.filter(pl.col(col) > upper_col_limit)
     # Log the filter and number of rows affected
@@ -81,8 +94,7 @@ def fill_missing_values_column_level(df: pl.DataFrame, columns: list[str]) -> pl
 cars = null_out_impossible_values(cars,"odometer",300_000)
 # cars = null_out_impossible_values(cars,"price",250_000)
 cars = drop_out_impossible_values(cars,"price",250_000)
-cars.write_parquet("cleaned_input.parquet")
-cars = pl.read_parquet("cleaned_input.parquet")
+
 cars = fill_missing_values_column_level(cars,["odometer","year","region"])
 # Write the DataFrame to a Parquet file
-cars.write_parquet("cleaned_input.parquet")
+cars.write_parquet("output/cleaned_input.parquet")

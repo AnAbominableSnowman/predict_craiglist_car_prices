@@ -11,7 +11,7 @@ claims = claims.to_pandas()
 profile = ProfileReport(claims, title="Pandas Profiling Report")
 
 # Save the report to an HTML file
-profile.to_file("profiling_report.html")
+profile.to_file("output/profiling_report.html")
 
 # Optionally, display the report in a Jupyter notebook
 profile.to_notebook_iframe()
