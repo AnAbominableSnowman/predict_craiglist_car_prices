@@ -5,24 +5,38 @@ from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score
+import numpy as np
+import statsmodels.api as sm
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+import matplotlib.pyplot as plt
 
-def train_fit_score_model(X, y):
+def train_fit_score_model(X, y, log:bool):
+    # Add a constant term for the intercept (as statsmodels does not include it by default)
+    X = sm.add_constant(X)
+
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # Create and fit the linear regression model
-    model = LinearRegression()
-    model.fit(X_train, y_train)
+    # Create and fit the linear regression model using statsmodels
+    model = sm.OLS(y_train, X_train).fit()
 
     # Make predictions on the test set
     y_pred = model.predict(X_test)
-
-    # Calculate RMSE
+    if log:
+        y_pred = np.exp(y_pred)
+        y_test = np.exp(y_test)
+        
+    # Calculate RMSE and R2 score
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
 
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
+
+    # Print the summary of the regression model (including beta coefficients, p-values, F-statistic, etc.)
+    print("\nModel Summary:")
+    print(model.summary())
 
     # Plot predicted vs actual values
     plt.figure(figsize=(10, 5))
@@ -46,9 +60,9 @@ def train_fit_score_model(X, y):
 
     plt.tight_layout()
     plt.show()
+    plt.close()
 
     return model
-
 
 
 # Initialize OneHotEncoder
@@ -57,9 +71,10 @@ encoder = OneHotEncoder(drop='first', sparse_output=False)
 # Create an empty list to store processed columns
 processed_columns = []
 
-claims = pd.read_parquet("cleaned_input.parquet")
+claims = pd.read_parquet("output/cleaned_engineered_input.parquet")
 
 y = claims.pop("price").to_numpy()
+
 def one_hot_columns(claims):
     # Step 1: Process each column based on its dtype
     for col in claims.columns:
@@ -80,9 +95,15 @@ def one_hot_columns(claims):
 
 
 explanatory_variables = [
+                        #  "odometer",
+                         "year",
+                        #  "region",
+                        #  "manufacturer",
+                        #  "model",
+                        #  "state",
                         # 'region', 
-                        'year', 
-                        # 'manufacturer',
+                        # 'year', 
+                        'manufacturer',
                         # 'model', 
                         # 'condition', 
                         # 'cylinders', 
@@ -93,12 +114,15 @@ explanatory_variables = [
                         # 'drive', 
                         # 'size', 
                         # 'type', 
-                        # 'paint_color',
-                        # 'state'
+                        'paint_color',
+                        'state',
+                        "title_status",
+                        # "paint_color","drive","fuel"
        ]
 
 print(claims.columns)
 print(claims.dtypes)
 X = one_hot_columns(claims[explanatory_variables])
+y_log = np.log(y)
 print(X)
-train_fit_score_model(X,y)
+train_fit_score_model(X,y_log,log=True)
