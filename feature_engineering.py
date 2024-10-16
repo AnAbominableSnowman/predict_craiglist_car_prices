@@ -31,4 +31,7 @@ joined_df = cars.join(grouped_df, left_on="org_manuf", right_on="manufacturer", 
 
 print(joined_df)
 
+
+
+
 joined_df.write_parquet("output/cleaned_engineered_input.parquet")
