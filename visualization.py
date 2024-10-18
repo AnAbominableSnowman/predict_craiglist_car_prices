@@ -77,8 +77,8 @@ def percent_below_threshold(cars: pl.DataFrame,threshold: float, col_to_check:st
 cars_raw = pl.read_parquet("output/raw_input.parquet")
 cars_cleaned = pl.read_parquet("output/cleaned_engineered_input.parquet")
 
-generate_profiling_report(cars_raw.limit(25_000), output_path="output/raw_sub_sampled_data_profiling_report.html", display_in_notebook=True)
-generate_profiling_report(cars_cleaned.limit(25_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html", display_in_notebook=True)
+generate_profiling_report(cars_raw.limit(25_000), output_path="output/raw_sub_sampled_data_profiling_report.html")
+generate_profiling_report(cars_cleaned.limit(25_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html",)
 
 plot_histogram(cars_raw, column='price')
 plot_histogram(cars_cleaned, column='price') 
