@@ -1,12 +1,5 @@
 import polars as pl
-from rich import print
-import polars.selectors as cs
-import polars as pl
 from sklearn.impute import SimpleImputer
-import numpy as np
-import polars as pl
-from sklearn.impute import SimpleImputer
-import numpy as np
 import zipfile
 from pathlib import Path
 
@@ -25,8 +18,6 @@ def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFram
     csv_file_path = output_directory / "vehicles.csv"
     return pl.read_csv(csv_file_path)
 
-# Example usage
-cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
 
 
 def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
@@ -37,20 +28,10 @@ def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
         .alias('cylinders')
     )
     return(cars)
-# Example usage
-# Assuming `cars` is already defined as a Polars DataFrame
-cars = clean_cylinders_column(cars)
 
 
 def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
-    """Drop unnecessary columns from the Polars DataFrame.
 
-    Args:
-        cars (pl.DataFrame): The input Polars DataFrame containing the car data.
-
-    Returns:
-        pl.DataFrame: The DataFrame with specified columns dropped.
-    """
     return cars.drop(
         "id",
         "url",
@@ -62,9 +43,6 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
         "size"
     )
 
-# Example usage
-# Assuming `cars` is already defined as a Polars DataFrame
-cars = drop_unnecessary_columns(cars)
 
 def null_out_impossible_values(cars,col,upper_col_limit:int)->pl.DataFrame:
     cars = cars.with_columns(pl.col(col).cast(pl.Int64))
@@ -127,39 +105,22 @@ def fill_missing_values_column_level(df: pl.DataFrame, columns: list[str]) -> pl
     
     return updated_df
 
+# Example usage
+cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
+cars.write_parquet("output/raw_input.parquet")
+cars = clean_cylinders_column(cars)
+cars = drop_unnecessary_columns(cars)
 cars = drop_out_impossible_values(cars,"odometer",300_000,True)
-# cars = null_out_impossible_values(cars,"price",250_000)
 cars = drop_out_impossible_values(cars,"price",125_000,True)
 cars = drop_out_impossible_values(cars,"price",2_000,False)
-
 cars = fill_missing_values_column_level(cars,[
                                               "odometer",
                                               "year",
-                                            #   "region",
                                               "manufacturer",
-                                            #   "model",
                                               "state",
                                               "title_status",
                                               "paint_color",
-                                            #   "drive",
-                                            #   "fuel"
                                               ])
-
-# Assuming 'cars' is your DataFrame and 'price' is the column you're interested in
-# Define the threshold value
-threshold = 2000
-
-# Calculate the number of rows below the threshold
-count_below_threshold = cars.filter(pl.col('price') < threshold).height
-
-# Calculate the total number of rows
-total_rows = cars.height
-
-# Calculate the percentage
-percentage_below_threshold = (count_below_threshold / total_rows) * 100 if total_rows > 0 else 0
-
-# Print the result
-print(f"Percentage of rows below {threshold}: {percentage_below_threshold:.2f}%")
 
 # Write the DataFrame to a Parquet file
 cars.write_parquet("output/cleaned_input.parquet")

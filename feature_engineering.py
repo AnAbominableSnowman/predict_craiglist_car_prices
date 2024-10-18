@@ -1,7 +1,7 @@
 import polars as pl
 import pandas as pd
-from ydata_profiling import ProfileReport
 
+from sklearn.feature_extraction import text as sklearn_text
 
 from sklearn.feature_extraction.text import TfidfVectorizer
 
@@ -31,7 +31,6 @@ def replace_rare_and_null_manufacturer(cars:pl.DataFrame,percent_needed: float,r
 
     joined_df = cars.join(grouped_df, left_on="org_manuf", right_on="manufacturer", how="left", coalesce=False)
     return(joined_df)
-from sklearn.feature_extraction import text as sklearn_text
 
 
 # Function to preprocess descriptions
@@ -68,7 +67,7 @@ cars_non_empty = cars.filter(pl.col('description') != '')
 cars_empty = cars.filter(pl.col('description') == '').drop("description")
 
 # Initialize TfidfVectorizer
-vectorizer = TfidfVectorizer(max_features=100)  # Limit to top 500 terms
+vectorizer = TfidfVectorizer(max_features=500)  # Limit to top 500 terms
 
 
 # Fit the vectorizer only on non-empty descriptions

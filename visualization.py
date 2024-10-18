@@ -7,63 +7,84 @@ import polars as pl
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.stats import gaussian_kde
+import matplotlib.pyplot as plt
+import polars as pl
 
+def generate_profiling_report(data: pl.DataFrame, output_path: str) -> None:
 
-# Write the DataFrame to a Parquet file
-cars = pl.read_parquet("output/cleaned_engineered_input.parquet").limit(50_000)
-print(cars.columns)
-# Convert Polars DataFrame to Pandas DataFrame
-# cars = cars.to_pandas()
+    cars_pandas = data.to_pandas()
 
-# # Run profiling
-# profile = ProfileReport(cars, title="Pandas Profiling Report")
+    profile = ProfileReport(cars_pandas, title="Pandas Profiling Report")
+    profile.to_file(output_path)
 
-# # Save the report to an HTML file
-# profile.to_file("output/profiling_report.html")
+def plot_histogram(data: pl.DataFrame, column: str, bin_width: int = 500) -> None:
 
-# Optionally, display the report in a Jupyter notebook
-# profile.to_notebook_iframe()
+    values = data[column].to_list()
+    
+    # Calculate the number of bins based on the range of values
+    bins = range(int(min(values)), int(max(values)) + bin_width, bin_width)
 
-
-prices = cars['price'].to_list()
-bin_width = 500
-
-# Calculate the number of bins based on the range of prices
-bins = range(int(min(prices)), int(max(prices)) + bin_width, bin_width)
-
-# Plotting the histogram
-plt.figure(figsize=(10, 6))
-plt.hist(prices, bins=bins, color='blue', alpha=0.7, edgecolor='black')
-plt.xlabel("Price")
-plt.ylabel("Frequency")
-plt.title("Histogram of Prices")
-plt.grid(axis='y')
-plt.show()
-
-
-# Verify if the manufacturer column exists
-if 'manufacturer' in cars.columns and 'price' in cars.columns:
-    manufacturers = cars['manufacturer'].unique().to_list()
-
-    plt.figure(figsize=(12, 8))
-
-    # Loop through each manufacturer to plot their price distribution
-    for manufacturer in manufacturers:
-        prices = cars.filter(pl.col("manufacturer") == manufacturer)['price'].to_list()
-        
-        if len(prices) > 1:  # At least two prices needed for KDE
-            # Calculate KDE
-            kde = gaussian_kde(prices)
-            x = np.linspace(min(prices), max(prices), 100)  # Create a range for the x-axis
-            plt.plot(x, kde(x), label=manufacturer)  # Plot the KDE
-        else:
-            print(f"Not enough data for manufacturer: {manufacturer}")
-
-    plt.xlabel("Price")
-    plt.ylabel("Density")
-    plt.title("KDE of Prices by Manufacturer")
-    plt.legend()
-    plt.grid()
+    # Plotting the histogram
+    plt.figure(figsize=(10, 6))
+    plt.hist(values, bins=bins, color='blue', alpha=0.7, edgecolor='black')
+    plt.xlabel(column.capitalize())
+    plt.ylabel("Frequency")
+    plt.title(f"Histogram of {column.capitalize()}")
+    plt.grid(axis='y')
     plt.show()
-else:
-    print("The 'manufacturer' or 'price' column does not exist in the DataFrame.")
+
+
+def kde_of_col_1_by_col2(cars:pl.DataFrame,col_1:str,col_2:str):
+    # Verify if the manufacturer column exists
+    if col_1 in cars.columns and col_2 in cars.columns:
+        values_of_col_1 = cars[col_1].unique().to_list()
+
+        plt.figure(figsize=(12, 8))
+
+        # Loop through each col_1 to plot their price distribution
+        for filter_value in values_of_col_1:
+            col_2s = cars.filter(pl.col(col_1) == filter_value)[col_2].to_list()
+            
+            if len(col_2s) > 1:  # At least two prices needed for KDE
+                # Calculate KDE
+                kde = gaussian_kde(col_2s)
+                x = np.linspace(min(col_2s), max(col_2s), 100)  # Create a range for the x-axis
+                plt.plot(x, kde(x), label=col_1)  # Plot the KDE
+            else:
+                print(f"Not enough data for {col_1}: {filter_value}")
+
+        plt.xlabel(col_2)
+        plt.ylabel("Density")
+        plt.title(f"KDE of {col_2} by {col_1}")
+        plt.legend()
+        plt.grid()
+        plt.show()
+    else:
+        print(f"The '{col_2}' or '{col_1}' column does not exist in the DataFrame.")
+
+
+def percent_below_threshold(cars: pl.DataFrame,threshold: float, col_to_check:str):
+
+    count_below_threshold = cars.filter(pl.col(col_to_check) < threshold).height
+    total_rows = cars.height
+    percentage_below_threshold = (count_below_threshold / total_rows) * 100 if total_rows > 0 else 0
+
+    print(f"Percentage of rows below {threshold}: {percentage_below_threshold:.2f}%")
+    
+
+
+
+cars_raw = pl.read_parquet("output/raw_input.parquet")
+cars_cleaned = pl.read_parquet("output/cleaned_engineered_input.parquet")
+
+generate_profiling_report(cars_raw.limit(25_000), output_path="output/raw_sub_sampled_data_profiling_report.html", display_in_notebook=True)
+generate_profiling_report(cars_cleaned.limit(25_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html", display_in_notebook=True)
+
+plot_histogram(cars_raw, column='price')
+plot_histogram(cars_cleaned, column='price') 
+
+plot_histogram(cars_raw, column='odometer') 
+plot_histogram(cars_cleaned, column='odometer')  
+
+kde_of_col_1_by_col2(cars_raw,"manufacturer","price")
+kde_of_col_1_by_col2(cars_cleaned,"manufacturer","price")
