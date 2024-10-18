@@ -11,38 +11,61 @@ import zipfile
 from pathlib import Path
 
 
-# Path to the .zip file
-zip_file_path = Path(r"inputs\vehicles.csv.zip")
+def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFrame:
+    zip_file_path = Path(zip_file_path)
+    output_directory = Path(output_directory)
 
-# Directory where you want to extract the .csv file
-output_directory = Path(r"inputs\vehicles_unzipped")
+    # Unzip the file
+    with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
+        zip_ref.extractall(output_directory)
 
-# Unzip the file
-with zipfile.ZipFile(zip_file_path, 'r') as zip_ref:
-    zip_ref.extractall(output_directory)
+    print(f"Files extracted to {output_directory}")
 
-print(f"Files extracted to {output_directory}")
+    # Load the CSV file into a Polars DataFrame
+    csv_file_path = output_directory / "vehicles.csv"
+    return pl.read_csv(csv_file_path)
 
-cars = pl.read_csv(r"inputs\vehicles_unzipped\vehicles.csv")
+# Example usage
+cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
 
-# Define a function to check if a column has "Yes" and "No" values and convert to Boolean
-# utlra_cars = cars.filter(pl.col("price")>950_000)
-# utlra_cars.write_excel()
-cars = cars.with_columns(
-    pl.when(pl.col('cylinders').str.replace_all(r'\D', '') != '')
-    .then(pl.col('cylinders').str.replace_all(r'\D', ''))
-    .otherwise(None)
-    .alias('cylinders')
-)
-cars = (cars
-        .drop(
-            # not real variables
-            "id",
-            "url",
-            "region_url","VIN","image_url","county","posting_date",
-            # size is too missing 75%
-            "size"
-            ))
+
+def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
+    cars = cars.with_columns(
+        pl.when(pl.col('cylinders').str.replace_all(r'\D', '') != '')
+        .then(pl.col('cylinders').str.replace_all(r'\D', ''))
+        .otherwise(None)
+        .alias('cylinders')
+    )
+    return(cars)
+# Example usage
+# Assuming `cars` is already defined as a Polars DataFrame
+cars = clean_cylinders_column(cars)
+
+
+def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
+    """Drop unnecessary columns from the Polars DataFrame.
+
+    Args:
+        cars (pl.DataFrame): The input Polars DataFrame containing the car data.
+
+    Returns:
+        pl.DataFrame: The DataFrame with specified columns dropped.
+    """
+    return cars.drop(
+        "id",
+        "url",
+        "region_url",
+        "VIN",
+        "image_url",
+        "county",
+        "posting_date",
+        "size"
+    )
+
+# Example usage
+# Assuming `cars` is already defined as a Polars DataFrame
+cars = drop_unnecessary_columns(cars)
+
 def null_out_impossible_values(cars,col,upper_col_limit:int)->pl.DataFrame:
     cars = cars.with_columns(pl.col(col).cast(pl.Int64))
     rows_to_nullify = cars.filter(pl.col(col) > upper_col_limit).height
@@ -108,13 +131,6 @@ cars = drop_out_impossible_values(cars,"odometer",300_000,True)
 # cars = null_out_impossible_values(cars,"price",250_000)
 cars = drop_out_impossible_values(cars,"price",125_000,True)
 cars = drop_out_impossible_values(cars,"price",2_000,False)
-#  # 'manufacturer',
-#                         # 'model', 
-#                         # 'condition', 
-#                         # 'cylinders', 
-#                         # 'fuel', 
-#                         'odometer', 
-#                         # 'title_status',
 
 cars = fill_missing_values_column_level(cars,[
                                               "odometer",
@@ -144,16 +160,6 @@ percentage_below_threshold = (count_below_threshold / total_rows) * 100 if total
 
 # Print the result
 print(f"Percentage of rows below {threshold}: {percentage_below_threshold:.2f}%")
-# # Assuming `cars` is your DataFrame
-# # Check if the DataFrame has any None values
-# none_values = cars.select(pl.all().is_null().any()).to_dict()
 
-# # Print results
-# print("Check for None values in each column:")
-# for col, has_none in none_values.items():
-#     if has_none:
-#         print(f"Column '{col}' has None values.")
-#     else:
-        # print(f"Column '{col}' has no None values.")
 # Write the DataFrame to a Parquet file
 cars.write_parquet("output/cleaned_input.parquet")
