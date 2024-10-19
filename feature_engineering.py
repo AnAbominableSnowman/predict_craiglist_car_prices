@@ -1,10 +1,6 @@
 import polars as pl
-import pandas as pd
-
 from sklearn.feature_extraction import text as sklearn_text
-
 from sklearn.feature_extraction.text import TfidfVectorizer
-
 
 
 def replace_rare_and_null_manufacturer(cars:pl.DataFrame,percent_needed: float,replacement_value: str)->pl.DataFrame:
@@ -17,7 +13,6 @@ def replace_rare_and_null_manufacturer(cars:pl.DataFrame,percent_needed: float,r
         .with_columns((pl.col("count") / total_rows * 100).alias("percent_of_total"))
     )
 
-    print(grouped_df)
     # Replace manufacturers with less than 3% of total with "Other"
     grouped_df = grouped_df.with_columns(
         pl.when(pl.col("percent_of_total") < percent_needed)

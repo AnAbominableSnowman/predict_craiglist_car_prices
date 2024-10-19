@@ -1,14 +1,9 @@
 import polars as pl
-import pandas as pd
 from ydata_profiling import ProfileReport
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
-import polars as pl
-import matplotlib.pyplot as plt
 import numpy as np
-from scipy.stats import gaussian_kde
-import matplotlib.pyplot as plt
-import polars as pl
+
 
 def generate_profiling_report(data: pl.DataFrame, output_path: str) -> None:
 
@@ -32,6 +27,7 @@ def plot_histogram(data: pl.DataFrame, column: str, bin_width: int = 500) -> Non
     plt.title(f"Histogram of {column.capitalize()}")
     plt.grid(axis='y')
     plt.show()
+    plt.close()
 
 
 def kde_of_col_1_by_col2(cars:pl.DataFrame,col_1:str,col_2:str):
@@ -59,6 +55,7 @@ def kde_of_col_1_by_col2(cars:pl.DataFrame,col_1:str,col_2:str):
         plt.legend()
         plt.grid()
         plt.show()
+        plt.close()
     else:
         print(f"The '{col_2}' or '{col_1}' column does not exist in the DataFrame.")
 
@@ -77,14 +74,25 @@ def percent_below_threshold(cars: pl.DataFrame,threshold: float, col_to_check:st
 cars_raw = pl.read_parquet("output/raw_input.parquet")
 cars_cleaned = pl.read_parquet("output/cleaned_engineered_input.parquet")
 
-generate_profiling_report(cars_raw.limit(25_000), output_path="output/raw_sub_sampled_data_profiling_report.html")
-generate_profiling_report(cars_cleaned.limit(25_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html",)
+# Get the list of columns that start with 'tfidf_'
+tfidf_columns = [col for col in cars_cleaned.columns if col.startswith("tfidf_")][-10:]
 
-plot_histogram(cars_raw, column='price')
-plot_histogram(cars_cleaned, column='price') 
+# Get all columns that don't start with 'tfidf_'
+non_tfidf_columns = [col for col in cars_cleaned.columns if not col.startswith("tfidf_")]
 
-plot_histogram(cars_raw, column='odometer') 
-plot_histogram(cars_cleaned, column='odometer')  
 
-kde_of_col_1_by_col2(cars_raw,"manufacturer","price")
-kde_of_col_1_by_col2(cars_cleaned,"manufacturer","price")
+# # Generate profiling report on the last 10 tfidf_ columns and limit to 5000 rows
+# generate_profiling_report(
+#     cars_raw.limit(5_000), 
+#     output_path="output/raw_sub_sampled_data_profiling_report.html"
+# )
+# generate_profiling_report(cars_cleaned.select(non_tfidf_columns+tfidf_columns).limit(5_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html",)
+
+plot_histogram(cars_raw.limit(5_000), column='price')
+# plot_histogram(cars_cleaned, column='price') 
+
+# plot_histogram(cars_raw, column='odometer') 
+# plot_histogram(cars_cleaned, column='odometer')  
+
+# kde_of_col_1_by_col2(cars_raw,"manufacturer","price")
+# kde_of_col_1_by_col2(cars_cleaned,"manufacturer","price")
