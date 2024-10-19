@@ -7,7 +7,9 @@ from sklearn.metrics import mean_squared_error, r2_score
 import statsmodels.api as sm
 
 
-def train_fit_score_linear_regression(X, y, log: bool):
+def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
+    if one_hot_encode:
+        X = one_hot_columns(X)
     # Add a constant term for the intercept (as statsmodels does not include it by default)
     X = sm.add_constant(X)
 
