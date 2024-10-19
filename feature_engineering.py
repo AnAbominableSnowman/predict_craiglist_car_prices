@@ -114,6 +114,6 @@ cars = pl.read_parquet("output/cleaned_input.parquet")
 cars = replace_rare_and_null_manufacturer(cars,3,"Other")
 # Preprocess the cars DataFrame
 cars = remove_punc_short_words_lower_case(cars)
-cars = create_tf_idf_cols(cars)
+cars = create_tf_idf_cols(cars,500)
 
 

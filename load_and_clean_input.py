@@ -111,32 +111,26 @@ def switch_condition_to_ordinal(cars:pl.DataFrame):
     ordinal_mapping = {'salvage': -3,'fair': -2,'good': -1,  "excellent": 1, 'new': 2, 'like new': 2}
     cars = cars.with_columns(pl.col('condition').replace(ordinal_mapping).alias('condition')
 )
-    # .with_columns(
-#     pl.when(pl.col('condition').is_null())
-#       .then(None)
-#       .otherwise(pl.col('condition').map_dict(ordinal_mapping))
-#       .alias('condition')
-# )
     return(cars)
 
-# Example usage
-cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
+# # Example usage
+# cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
 
-cars = drop_unnecessary_columns(cars)
-cars.write_parquet("output/raw_input.parquet")
-cars = clean_cylinders_column(cars)
-cars = switch_condition_to_ordinal(cars)
-cars = drop_out_impossible_values(cars,"odometer",300_000,True)
-cars = drop_out_impossible_values(cars,"price",125_000,True)
-cars = drop_out_impossible_values(cars,"price",2_000,False)
-cars = fill_missing_values_column_level(cars,[
-                                              "odometer",
-                                              "year",
-                                              "manufacturer",
-                                              "state",
-                                              "title_status",
-                                              "paint_color",
-                                              ])
+# cars = drop_unnecessary_columns(cars)
+# cars.write_parquet("output/raw_input.parquet")
+# cars = clean_cylinders_column(cars)
+# cars = switch_condition_to_ordinal(cars)
+# cars = drop_out_impossible_values(cars,"odometer",300_000,True)
+# cars = drop_out_impossible_values(cars,"price",125_000,True)
+# cars = drop_out_impossible_values(cars,"price",2_000,False)
+# cars = fill_missing_values_column_level(cars,[
+#                                               "odometer",
+#                                               "year",
+#                                               "manufacturer",
+#                                               "state",
+#                                               "title_status",
+#                                               "paint_color",
+#                                               ])
 
-# Write the DataFrame to a Parquet file
-cars.write_parquet("output/cleaned_input.parquet")
+# # Write the DataFrame to a Parquet file
+# cars.write_parquet("output/cleaned_input.parquet")

@@ -97,3 +97,4 @@ cars_cleaned = pl.read_parquet("output/cleaned_engineered_input.parquet")
 
 # kde_of_category_by_value(cars_raw,"manufacturer","price")
 kde_of_category_by_value(cars_cleaned,"manufacturer","price")
+kde_of_category_by_value(cars_cleaned,"manufacturer","odometer")
