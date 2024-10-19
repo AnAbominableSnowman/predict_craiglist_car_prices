@@ -5,6 +5,7 @@ from scipy.stats import gaussian_kde
 import numpy as np
 
 
+
 def generate_profiling_report(data: pl.DataFrame, output_path: str) -> None:
 
     cars_pandas = data.to_pandas()
@@ -30,34 +31,34 @@ def plot_histogram(data: pl.DataFrame, column: str, bin_width: int = 500) -> Non
     plt.close()
 
 
-def kde_of_col_1_by_col2(cars:pl.DataFrame,col_1:str,col_2:str):
-    # Verify if the manufacturer column exists
-    if col_1 in cars.columns and col_2 in cars.columns:
-        values_of_col_1 = cars[col_1].unique().to_list()
+def kde_of_category_by_value(cars: pl.DataFrame, category_column: str, value_column: str) -> None:
+    # Verify if the category and value columns exist
+    if category_column in cars.columns and value_column in cars.columns:
+        unique_categories = cars[category_column].unique().to_list()
 
         plt.figure(figsize=(12, 8))
 
-        # Loop through each col_1 to plot their price distribution
-        for filter_value in values_of_col_1:
-            col_2s = cars.filter(pl.col(col_1) == filter_value)[col_2].to_list()
+        # Loop through each unique category to plot their value distribution
+        for category_value in unique_categories:
+            filtered_values = cars.filter(pl.col(category_column) == category_value)[value_column].to_list()
             
-            if len(col_2s) > 1:  # At least two prices needed for KDE
+            if len(filtered_values) > 1:  # At least two values needed for KDE
                 # Calculate KDE
-                kde = gaussian_kde(col_2s)
-                x = np.linspace(min(col_2s), max(col_2s), 100)  # Create a range for the x-axis
-                plt.plot(x, kde(x), label=col_1)  # Plot the KDE
+                kde = gaussian_kde(filtered_values)
+                x = np.linspace(min(filtered_values), max(filtered_values), 100)  # Create a range for the x-axis
+                plt.plot(x, kde(x), label=category_value)  # Plot the KDE
             else:
-                print(f"Not enough data for {col_1}: {filter_value}")
+                print(f"Not enough data for {category_column}: {category_value}")
 
-        plt.xlabel(col_2)
+        plt.xlabel(value_column.capitalize())
         plt.ylabel("Density")
-        plt.title(f"KDE of {col_2} by {col_1}")
+        plt.title(f"KDE of {value_column.capitalize()} by {category_column.capitalize()}")
         plt.legend()
         plt.grid()
         plt.show()
         plt.close()
     else:
-        print(f"The '{col_2}' or '{col_1}' column does not exist in the DataFrame.")
+        print(f"The '{value_column}' or '{category_column}' column does not exist in the DataFrame.")
 
 
 def percent_below_threshold(cars: pl.DataFrame,threshold: float, col_to_check:str):
@@ -71,14 +72,14 @@ def percent_below_threshold(cars: pl.DataFrame,threshold: float, col_to_check:st
 
 
 
-cars_raw = pl.read_parquet("output/raw_input.parquet")
+# cars_raw = pl.read_parquet("output/raw_input.parquet")
 cars_cleaned = pl.read_parquet("output/cleaned_engineered_input.parquet")
 
-# Get the list of columns that start with 'tfidf_'
-tfidf_columns = [col for col in cars_cleaned.columns if col.startswith("tfidf_")][-10:]
+# # Get the list of columns that start with 'tfidf_'
+# tfidf_columns = [col for col in cars_cleaned.columns if col.startswith("tfidf_")][-10:]
 
-# Get all columns that don't start with 'tfidf_'
-non_tfidf_columns = [col for col in cars_cleaned.columns if not col.startswith("tfidf_")]
+# # Get all columns that don't start with 'tfidf_'
+# non_tfidf_columns = [col for col in cars_cleaned.columns if not col.startswith("tfidf_")]
 
 
 # # Generate profiling report on the last 10 tfidf_ columns and limit to 5000 rows
@@ -88,11 +89,11 @@ non_tfidf_columns = [col for col in cars_cleaned.columns if not col.startswith("
 # )
 # generate_profiling_report(cars_cleaned.select(non_tfidf_columns+tfidf_columns).limit(5_000), output_path="output/cleaned_sub_sampled_data_profiling_report.html",)
 
-plot_histogram(cars_raw.limit(5_000), column='price')
+# plot_histogram(cars_raw.limit(5_000), column='price')
 # plot_histogram(cars_cleaned, column='price') 
 
 # plot_histogram(cars_raw, column='odometer') 
 # plot_histogram(cars_cleaned, column='odometer')  
 
-# kde_of_col_1_by_col2(cars_raw,"manufacturer","price")
-# kde_of_col_1_by_col2(cars_cleaned,"manufacturer","price")
+# kde_of_category_by_value(cars_raw,"manufacturer","price")
+kde_of_category_by_value(cars_cleaned,"manufacturer","price")

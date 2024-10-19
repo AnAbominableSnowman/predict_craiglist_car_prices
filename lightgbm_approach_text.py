@@ -9,7 +9,7 @@ cars = pd.read_parquet("output/cleaned_engineered_input.parquet")
 cars = pd.DataFrame(cars)
 categorical_columns = cars.select_dtypes(include=['object']).columns.tolist()
 # region_code, segment, model, fuel_type, max_torque, max_power, engine_type: object, rear_brakes_type: object, transmission_type: object, steering_type
-cars[categorical_columns] = cars[categorical_columns].astype('category')
+cars[categorical_columns] = cars[categorical_columns+"condition"].astype('category')
 print(cars.dtypes)
 # Split the data into features and target
 y = cars.pop("price").to_numpy()
