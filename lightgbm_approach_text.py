@@ -6,11 +6,21 @@ from sklearn.metrics import root_mean_squared_error, r2_score
 
 
 cars = pd.read_parquet("output/cleaned_engineered_input.parquet")
-cars = pd.DataFrame(cars)
+
+print(cars.columns)
 categorical_columns = cars.select_dtypes(include=['object']).columns.tolist()
-# region_code, segment, model, fuel_type, max_torque, max_power, engine_type: object, rear_brakes_type: object, transmission_type: object, steering_type
-cars[categorical_columns] = cars[categorical_columns+"condition"].astype('category')
-print(cars.dtypes)
+# if "condition" in cars.columns:
+#     categorical_columns.append("condition")
+# else:
+#     print("'condition' column not found in DataFrame.")
+#     # Filter to only include columns that exist in cars
+existing_categorical_columns = [col for col in categorical_columns if col in cars.columns]
+
+if existing_categorical_columns:  # Check if there are any valid columns
+    cars[existing_categorical_columns] = cars[existing_categorical_columns].astype('category')
+else:
+    print("No categorical columns to convert.")
+
 # Split the data into features and target
 y = cars.pop("price").to_numpy()
 

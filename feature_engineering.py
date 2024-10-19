@@ -2,7 +2,6 @@ import polars as pl
 from sklearn.feature_extraction import text as sklearn_text
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-
 def replace_rare_and_null_manufacturer(cars:pl.DataFrame,percent_needed: float,replacement_value: str)->pl.DataFrame:
     total_rows = cars.height
     cars = cars.with_columns(pl.col("manufacturer").alias("org_manuf")).drop("manufacturer")
@@ -52,25 +51,7 @@ def remove_punc_short_words_lower_case(cars: pl.DataFrame) -> pl.DataFrame:
     )
     return cars
 
-cars = pl.read_parquet("output/cleaned_input.parquet").limit(4000)
-# cars = replace_rare_and_null_manufacturer(cars,3,"Other")
-# Preprocess the cars DataFrame
-cars = remove_punc_short_words_lower_case(cars)
-
-# Split into two DataFrames: one with non-empty descriptions, one with empty descriptions
-cars_non_empty = cars.filter(pl.col('description') != '')
-cars_empty = cars.filter(pl.col('description') == '').drop("description")
-
-# Initialize TfidfVectorizer
-vectorizer = TfidfVectorizer(max_features=10)  # Limit to top 500 terms
-
-import polars as pl
-from sklearn.feature_extraction.text import TfidfVectorizer
-import polars as pl
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-num_features = 10
-if cars_non_empty.height > 0:  # Ensure there's data to transform
+def compute_tfidf_and_term_frequencies(cars_non_empty, num_features: int) -> pl.DataFrame:
     vectorizer = TfidfVectorizer(max_features=num_features)  # Define your vectorizer
     tfidf_matrix = vectorizer.fit_transform(cars_non_empty['description'].to_list())
 
@@ -80,42 +61,59 @@ if cars_non_empty.height > 0:  # Ensure there's data to transform
     # Create the Polars DataFrame with the correct columns
     tfidf_df = pl.DataFrame(tfidf_matrix.toarray(), schema=tfidf_columns)
 
-    # Step 1: Calculate the term frequency (sum of each column)
+    # Calculate the term frequency (sum of each column)
     term_frequencies = tfidf_df.sum()  # Calculate the sum for each column
 
-    # Step 2: Create a DataFrame to hold term frequencies and column names
+    # Create a DataFrame to hold term frequencies and column names
     freq_df = pl.DataFrame({
         'column': tfidf_columns,
         'term_frequency': term_frequencies.to_numpy().flatten().tolist()  # Ensure term_frequencies is a list
     })
 
-    # Step 3: Sort the DataFrame by term frequency
+    # Sort the DataFrame by term frequency
     sorted_freq_df = freq_df.sort('term_frequency', descending=True)
- 
-    # Step 5: Create an ordered list of columns based on the top 500 words
-    ordered_columns = sorted_freq_df['column'].to_list()
+    
+    return tfidf_df, sorted_freq_df
 
-    # Step 6: Rearrange the original tfidf_df based on the ordered columns
+def rearrange_and_combine(cars_non_empty, ordered_columns: list, tfidf_df: pl.DataFrame) -> pl.DataFrame:
+    # Rearrange the original tfidf_df based on the ordered columns
     ordered_tfidf_df = tfidf_df.select(ordered_columns)
 
     # Combine the numeric columns with the TF-IDF features
     cars_non_empty_numeric = cars_non_empty.drop('description')
     final_non_empty_df = pl.concat([cars_non_empty_numeric, ordered_tfidf_df], how="horizontal")
 
-    # Rejoin the non-empty and empty DataFrames
-    final_df = pl.concat([final_non_empty_df, cars_empty], how="diagonal_relaxed")
+    return final_non_empty_df
 
-    # Save the final dataframe to a parquet file
-    final_df.write_parquet("output/cleaned_engineered_input.parquet")
+def create_tf_idf_cols(cars: pl.DataFrame,num_features: int) -> None:
+    # Split into two DataFrames: one with non-empty descriptions, one with empty descriptions
+    cars_non_empty = cars.filter(pl.col('description') != '')
+    cars_empty = cars.filter(pl.col('description') == '').drop("description")
 
-else:
-    print("No non-empty descriptions to process.")
-    cars.write_parquet("output/cleaned_engineered_input.parquet")
-# Step 3: Combine the TF-IDF features with the numeric columns in 'cars'
-# # Drop 'description' and 'description' from 'cars' to avoid duplicate text data
-# cars_numeric = cars.drop(['description',"orig_description" ])
+    if cars_non_empty.height > 0:  # Ensure there's data to transform
+        tfidf_df, sorted_freq_df = compute_tfidf_and_term_frequencies(cars_non_empty, num_features)
 
-# # Combine the numeric columns with the TF-IDF features
-# final_df = pl.concat([cars_numeric, tfidf_df], how="horizontal")
+        # Create an ordered list of columns based on the top words
+        ordered_columns = sorted_freq_df['column'].to_list()
 
-# final_df.write_parquet("output/cleaned_engineered_input.parquet")
+        # Rearrange and combine the DataFrames
+        final_non_empty_df = rearrange_and_combine(cars_non_empty, ordered_columns, tfidf_df)
+
+        # Rejoin the non-empty and empty DataFrames
+        final_df = pl.concat([final_non_empty_df, cars_empty], how="diagonal_relaxed")
+        print(f'does description make it in?{final_df.columns}')
+        # Save the final DataFrame to a parquet file
+        final_df.write_parquet("output/cleaned_engineered_input.parquet")
+    else:
+        print("No non-empty descriptions to process.")
+        cars_empty.write_parquet("output/cleaned_engineered_input.parquet")
+
+
+
+cars = pl.read_parquet("output/cleaned_input.parquet")
+cars = replace_rare_and_null_manufacturer(cars,3,"Other")
+# Preprocess the cars DataFrame
+cars = remove_punc_short_words_lower_case(cars)
+cars = create_tf_idf_cols(cars)
+
+
