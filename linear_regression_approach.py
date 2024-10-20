@@ -3,8 +3,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import OneHotEncoder
 import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import r2_score, root_mean_squared_error
 import statsmodels.api as sm
+import os
 
 
 def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
@@ -27,17 +28,12 @@ def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
         y_pred = np.exp(y_pred)
         y_test = np.exp(y_test)
 
-    # Calculate RMSE and R2 score
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    r2 = r2_score(y_test, y_pred)
+    plot_results(y_test, y_pred, log)
+    print_results(y_test, y_pred, model)
+    return model
 
-    print(f"Root Mean Squared Error (RMSE): {rmse}")
-    print(f"R-squared (R2): {r2}")
 
-    # Print the summary of the regression model (including beta coefficients, p-values, F-statistic, etc.)
-    print("\nModel Summary:")
-    print(model.summary())
-
+def plot_results(y_test, y_pred, log):
     # Plot predicted vs actual values
     plt.figure(figsize=(10, 5))
 
@@ -59,10 +55,32 @@ def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
     plt.title("Residuals Plot")
 
     plt.tight_layout()
-    plt.show()
-    plt.close()
 
-    return model
+    if log:
+        model_name = "Log price Linear Regression/"
+    else:
+        model_name = "Simple Linear Regression of Price by Odometer/"
+
+    save_path = "output/"
+    # Ensure the directory exists
+    directory = os.path.dirname(f"{save_path}{model_name}")
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    plt.savefig(f"{directory}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
+
+
+def print_results(y_test, y_pred, model):
+    # Calculate RMSE and R2 score
+    rmse = np.sqrt(root_mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+
+    print(f"Root Mean Squared Error (RMSE): {rmse}")
+    print(f"R-squared (R2): {r2}")
+
+    # Print the summary of the regression model (including beta coefficients, p-values, F-statistic, etc.)
+    print("\nModel Summary:")
+    print(model.summary())
 
 
 def one_hot_columns(cars):

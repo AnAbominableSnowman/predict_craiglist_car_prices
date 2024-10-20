@@ -2,7 +2,8 @@ import lightgbm as lgb
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import r2_score, root_mean_squared_error
+from numpy import ndarray
 
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
@@ -35,7 +36,13 @@ def split_data(cars: pd.DataFrame, target_column: str):
     return X_train, X_test, y_train, y_test
 
 
-def train_lightgbm(X_train, X_test, y_train, y_test, categorical_columns: list):
+def train_lightgbm(
+    X_train: pd.DataFrame,
+    X_test: pd.DataFrame,
+    y_train: ndarray,
+    y_test: ndarray,
+    categorical_columns: list,
+):
     """Trains a LightGBM model and returns predictions."""
     # Create LightGBM datasets
     train_data = lgb.Dataset(
@@ -70,7 +77,7 @@ def train_lightgbm(X_train, X_test, y_train, y_test, categorical_columns: list):
 
 def evaluate_model(y_test, y_pred):
     """Evaluates the model using RMSE and R-squared metrics."""
-    rmse = mean_squared_error(y_test, y_pred, squared=False)  # RMSE
+    rmse = root_mean_squared_error(y_test, y_pred, squared=False)  # RMSE
     r2 = r2_score(y_test, y_pred)  # R-squared
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
@@ -103,11 +110,9 @@ def plot_results(y_test, y_pred):
     plt.close()
 
 
-def main():
+def train_fit_score_light_gbm(input_path: str):
     # Load and prepare data
-    cars, categorical_columns = load_and_prepare_data(
-        "output/cleaned_engineered_input.parquet"
-    )
+    cars, categorical_columns = load_and_prepare_data(f"output/{input_path}.parquet")
 
     # Split data into train and test sets
     X_train, X_test, y_train, y_test = split_data(cars, "price")
