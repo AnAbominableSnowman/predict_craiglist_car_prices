@@ -11,7 +11,7 @@ from numpy import ndarray
 
 def train_fit_score_linear_regression(
     X: pd.DataFrame, y: ndarray, log: bool, one_hot_encode: bool
-) -> sm.RegressionResultsWrapper:
+):
     if one_hot_encode:
         X = one_hot_columns(X)
     # Add a constant term for the intercept (as statsmodels does not include it by default)
@@ -73,9 +73,7 @@ def plot_results(y_test: ndarray, y_pred: ndarray, log: bool) -> None:
     plt.savefig(f"{directory}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
 
 
-def print_results(
-    y_test: ndarray, y_pred: ndarray, model: sm.RegressionResultsWrapper
-) -> None:
+def print_results(y_test: ndarray, y_pred: ndarray, model) -> None:
     # Calculate RMSE and R2 score
     rmse = np.sqrt(root_mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)

@@ -48,7 +48,7 @@ def train_lightgbm(
     model = lgb.train(
         params,
         train_data,
-        num_boost_round=11,
+        num_boost_round=5_000,
         valid_sets=[train_data, test_data],
         valid_names=["training", "validation"],
         callbacks=[
@@ -145,7 +145,7 @@ def train_fit_score_light_gbm(input_path: str):
         fn=lambda params: objective(params, cars, "price"),
         space=space,
         algo=tpe.suggest,
-        max_evals=40,
+        max_evals=10,
     )
 
     best_num_word_cols = int(best_params["num_word_cols"])

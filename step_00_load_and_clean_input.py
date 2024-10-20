@@ -36,6 +36,17 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def detect_if_carvana_ad(cars: pl.DataFrame) -> pl.DataFrame:
+    cars = cars.with_columns(
+        (
+            pl.col("description")
+            .str.to_lowercase()
+            .str.contains("carvana is the safer way to buy a car")
+        ).alias("carvana_ad")
+    )
+    return cars
+
+
 def null_out_impossible_values(cars, col, upper_col_limit: int) -> pl.DataFrame:
     cars = cars.with_columns(pl.col(col).cast(pl.Int64))
     rows_to_nullify = cars.filter(pl.col(col) > upper_col_limit).height
@@ -118,26 +129,3 @@ def switch_condition_to_ordinal(cars: pl.DataFrame):
         pl.col("condition").replace(ordinal_mapping).alias("condition")
     )
     return cars
-
-
-# # Example usage
-# cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
-
-# cars = drop_unnecessary_columns(cars)
-# cars.write_parquet("output/raw_input.parquet")
-# cars = clean_cylinders_column(cars)
-# cars = switch_condition_to_ordinal(cars)
-# cars = drop_out_impossible_values(cars,"odometer",300_000,True)
-# cars = drop_out_impossible_values(cars,"price",125_000,True)
-# cars = drop_out_impossible_values(cars,"price",2_000,False)
-# cars = fill_missing_values_column_level(cars,[
-#                                               "odometer",
-#                                               "year",
-#                                               "manufacturer",
-#                                               "state",
-#                                               "title_status",
-#                                               "paint_color",
-#                                               ])
-
-# # Write the DataFrame to a Parquet file
-# cars.write_parquet("output/cleaned_input.parquet")
