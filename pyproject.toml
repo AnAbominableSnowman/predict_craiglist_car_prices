@@ -1,0 +1,26 @@
+[tool.ruff]
+# Enable all linting checks
+select = ["*"]
+
+# Enable automatic fix on save
+fix = true
+
+# Exclude specific directories and files from checks (if needed)
+exclude = ["__pycache__", ".git", "venv", "env"]
+
+# Specify the maximum line length (default is 88)
+line-length = 88
+
+# Enable or disable specific checks
+# You can uncomment any of these lines to disable a specific check if needed
+# ignore = ["E501"]  # Ignore line length checks
+# select = ["E", "F", "W"]  # Only select specific check codes
+
+# Specify file extensions to include
+# Defaults to .py; you can add others if needed
+extend-ignore = ["*.py"]
+
+# Enable type checking (if using type annotations)
+enable-type-checking = true
+
+# Additional options can be added as needed
