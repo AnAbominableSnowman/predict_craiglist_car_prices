@@ -6,9 +6,12 @@ import numpy as np
 from sklearn.metrics import r2_score, root_mean_squared_error
 import statsmodels.api as sm
 import os
+from numpy import ndarray
 
 
-def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
+def train_fit_score_linear_regression(
+    X: pd.DataFrame, y: ndarray, log: bool, one_hot_encode: bool
+) -> sm.RegressionResultsWrapper:
     if one_hot_encode:
         X = one_hot_columns(X)
     # Add a constant term for the intercept (as statsmodels does not include it by default)
@@ -33,7 +36,7 @@ def train_fit_score_linear_regression(X, y, log: bool, one_hot_encode: bool):
     return model
 
 
-def plot_results(y_test, y_pred, log):
+def plot_results(y_test: ndarray, y_pred: ndarray, log: bool) -> None:
     # Plot predicted vs actual values
     plt.figure(figsize=(10, 5))
 
@@ -70,7 +73,9 @@ def plot_results(y_test, y_pred, log):
     plt.savefig(f"{directory}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
 
 
-def print_results(y_test, y_pred, model):
+def print_results(
+    y_test: ndarray, y_pred: ndarray, model: sm.RegressionResultsWrapper
+) -> None:
     # Calculate RMSE and R2 score
     rmse = np.sqrt(root_mean_squared_error(y_test, y_pred))
     r2 = r2_score(y_test, y_pred)
@@ -83,7 +88,7 @@ def print_results(y_test, y_pred, model):
     print(model.summary())
 
 
-def one_hot_columns(cars):
+def one_hot_columns(cars: pd.DataFrame) -> pd.DataFrame:
     # Create an empty list to store processed columns
     processed_columns = []
 

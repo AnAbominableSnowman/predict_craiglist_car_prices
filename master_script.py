@@ -1,4 +1,4 @@
-from lightgbm_approach_text import train_fit_score_light_gbm
+from step_03_lightgbm_approach_with_text_and_hyperopt import train_fit_score_light_gbm
 
 # # # pull in and unzip the zip from kaggle
 # cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
@@ -87,7 +87,9 @@ from lightgbm_approach_text import train_fit_score_light_gbm
 # cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
 
 # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-train_fit_score_light_gbm(
-    input_path="cleaned_edited_feature_engineered_input", hyperparameter_tuning=False
-)
+# train_fit_score_light_gbm(
+#     input_path="cleaned_edited_feature_engineered_input", hyperparameter_tuning=False
+# )
+
+train_fit_score_light_gbm(input_path="cleaned_edited_feature_engineered_input")
 # cars = pl.read_parquet("output/cleaned_input.parquet")
