@@ -14,9 +14,11 @@ from load_and_clean_input import (
 )
 from linear_regression_approach import train_fit_score_linear_regression
 from numpy import log
+import pandas as pd
 
 # pull in and unzip the zip from kaggle
 cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
+cars = cars.limit(5_000)
 # these are mostly non informative columns like URL, or constant values, or columns that
 # the author mentioned were corrupted.
 cars = drop_unnecessary_columns(cars)
