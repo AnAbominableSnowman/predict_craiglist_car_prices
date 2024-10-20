@@ -1,5 +1,4 @@
 from lightgbm_approach_text import train_fit_score_light_gbm
-import polars as pl
 
 # # # pull in and unzip the zip from kaggle
 # cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
@@ -87,6 +86,8 @@ import polars as pl
 # cars = create_tf_idf_cols(cars, 500)
 # cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
 
-train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-
-cars = pl.read_parquet("output/cleaned_input.parquet")
+# train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
+train_fit_score_light_gbm(
+    input_path="cleaned_edited_feature_engineered_input", hyperparameter_tuning=False
+)
+# cars = pl.read_parquet("output/cleaned_input.parquet")
