@@ -4,6 +4,7 @@ from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, root_mean_squared_error
 from numpy import ndarray
+import os
 
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
@@ -77,14 +78,14 @@ def train_lightgbm(
 
 def evaluate_model(y_test, y_pred):
     """Evaluates the model using RMSE and R-squared metrics."""
-    rmse = root_mean_squared_error(y_test, y_pred, squared=False)  # RMSE
+    rmse = root_mean_squared_error(y_test, y_pred)  # RMSE
     r2 = r2_score(y_test, y_pred)  # R-squared
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
     return rmse, r2
 
 
-def plot_results(y_test, y_pred):
+def plot_results(y_test, y_pred, save_path):
     """Plots the predicted vs actual values and residuals plot."""
     plt.figure(figsize=(10, 5))
 
@@ -106,8 +107,13 @@ def plot_results(y_test, y_pred):
     plt.title("Residuals Plot")
 
     plt.tight_layout()
-    plt.show()
-    plt.close()
+
+    # Ensure the directory exists
+    directory = os.path.dirname(f"{save_path}")
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    plt.savefig(f"{save_path}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
 
 
 def train_fit_score_light_gbm(input_path: str):
@@ -124,6 +130,13 @@ def train_fit_score_light_gbm(input_path: str):
 
     # Evaluate the model
     evaluate_model(y_test, y_pred)
-
+    HyperOpt = False
+    if True:
+        model_name = "LightGBM"
+    if X_train.columns.str.startswith("tfidf").any():
+        model_name = model_name + "_with_words"
+    if HyperOpt:
+        model_name = model_name + "_and_hyperparameter_tuning"
+    model_name = model_name + "/"
     # Plot results
-    plot_results(y_test, y_pred)
+    plot_results(y_test, y_pred, model_name)

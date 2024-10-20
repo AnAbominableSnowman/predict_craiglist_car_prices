@@ -1,13 +1,4 @@
-from feature_engineering import (
-    create_tf_idf_cols,
-    remove_punc_short_words_lower_case,
-)
-
-
 from lightgbm_approach_text import train_fit_score_light_gbm
-from linear_regression_approach import train_fit_score_linear_regression
-from numpy import log
-import pandas as pd
 import polars as pl
 
 # # # pull in and unzip the zip from kaggle
@@ -62,39 +53,39 @@ import polars as pl
 # )
 
 
-cars_imputed_missing_for_lin_regrs = pd.read_parquet(
-    "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet"
-)
+# cars_imputed_missing_for_lin_regrs = pd.read_parquet(
+#     "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet"
+# )
 
-y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
-X = cars_imputed_missing_for_lin_regrs
+# y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
+# X = cars_imputed_missing_for_lin_regrs
 
-train_fit_score_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
-
-
-explanatory_variables = [
-    "year",
-    "manufacturer",
-    "odometer",
-    "paint_color",
-    "state",
-    "title_status",
-]
+# train_fit_score_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
 
 
-train_fit_score_linear_regression(
-    X[explanatory_variables], log(y), log=True, one_hot_encode=True
-)
+# explanatory_variables = [
+#     "year",
+#     "manufacturer",
+#     "odometer",
+#     "paint_color",
+#     "state",
+#     "title_status",
+# ]
 
-cars = pl.read_parquet("output/cleaned_and_edited_input.parquet")
 
-# Description is a huge potential source of info. So I'll use Tf_Idf
-# to try to squeeze some knowledge out.
+# train_fit_score_linear_regression(
+#     X[explanatory_variables], log(y), log=True, one_hot_encode=True
+# )
 
-# Preprocess the cars DataFrame
-cars = remove_punc_short_words_lower_case(cars)
-cars = create_tf_idf_cols(cars, 500)
-cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
+# cars = pl.read_parquet("output/cleaned_and_edited_input.parquet")
+
+# # Description is a huge potential source of info. So I'll use Tf_Idf
+# # to try to squeeze some knowledge out.
+
+# # Preprocess the cars DataFrame
+# cars = remove_punc_short_words_lower_case(cars)
+# cars = create_tf_idf_cols(cars, 500)
+# cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
 
 train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
 
