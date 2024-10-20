@@ -87,9 +87,16 @@ from step_03_lightgbm_approach_with_text_and_hyperopt import train_fit_score_lig
 # cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
 
 # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-# train_fit_score_light_gbm(
-#     input_path="cleaned_edited_feature_engineered_input", hyperparameter_tuning=False
-# )
-
 train_fit_score_light_gbm(input_path="cleaned_edited_feature_engineered_input")
+
+# train_fit_score_light_gbm(input_path="cleaned_edited_feature_engineered_input")
 # cars = pl.read_parquet("output/cleaned_input.parquet")
+# Read the pickle object
+# import pickle
+
+# with open("LightGBM_with_words/best_lightgbm_model.pkl", "rb") as file:
+#     model = pickle.load(file)
+# print(model)
+# with open("LightGBM_with_words/final_params.pkl", "rb") as file:
+#     best_params = pickle.load(file)
+# print(best_params)
