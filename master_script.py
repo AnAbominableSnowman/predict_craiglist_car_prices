@@ -12,6 +12,8 @@ from load_and_clean_input import (
     drop_out_impossible_values,
     fill_missing_values_column_level,
 )
+from linear_regression_approach import train_fit_score_linear_regression
+from numpy import log
 
 # pull in and unzip the zip from kaggle
 cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
@@ -67,6 +69,9 @@ cars_imputed_missing_for_lin_regrs = pd.read_parquet(
 )
 
 y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
+X = cars_imputed_missing_for_lin_regrs
+
+train_fit_score_linear_regression(X["odometer"], y, log=False)
 
 
 explanatory_variables = [
@@ -78,12 +83,9 @@ explanatory_variables = [
     "title_status",
 ]
 
-print(cars.columns)
-print(cars.dtypes)
-X = one_hot_columns(cars[explanatory_variables])
-y_log = np.log(y)
-print(X)
-train_fit_score_model(X, y_log, log=True)
+
+train_fit_score_linear_regression(X[explanatory_variables], log(y), log=True)
+
 # Description is a huge potential source of info. So I'll use Tf_Idf
 # to try to squeeze some knowledge out.
 cars = remove_punc_short_words_lower_case(cars)
