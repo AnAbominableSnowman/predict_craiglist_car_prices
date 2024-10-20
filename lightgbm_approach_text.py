@@ -2,88 +2,123 @@ import lightgbm as lgb
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
-from sklearn.metrics import root_mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score
 
 
-cars = pd.read_parquet("output/cleaned_engineered_input.parquet")
+def load_and_prepare_data(filepath: str) -> pd.DataFrame:
+    """Loads the dataset and prepares the categorical columns."""
+    cars = pd.read_parquet(filepath)
 
-categorical_columns = cars.select_dtypes(include=["object"]).columns.tolist()
+    # Identify categorical columns
+    categorical_columns = cars.select_dtypes(include=["object"]).columns.tolist()
 
-existing_categorical_columns = [
-    col for col in categorical_columns if col in cars.columns
-]
+    # Convert columns to categorical
+    existing_categorical_columns = [
+        col for col in categorical_columns if col in cars.columns
+    ]
+    if existing_categorical_columns:
+        cars[existing_categorical_columns] = cars[existing_categorical_columns].astype(
+            "category"
+        )
+    else:
+        print("No categorical columns to convert.")
 
-if existing_categorical_columns:  # Check if there are any valid columns
-    cars[existing_categorical_columns] = cars[existing_categorical_columns].astype(
-        "category"
+    return cars, existing_categorical_columns
+
+
+def split_data(cars: pd.DataFrame, target_column: str):
+    """Splits the data into features and target, and into training and testing sets."""
+    y = cars.pop(target_column).to_numpy()
+    X_train, X_test, y_train, y_test = train_test_split(
+        cars, y, test_size=0.2, random_state=42
     )
-else:
-    print("No categorical columns to convert.")
-
-# Split the data into features and target
-y = cars.pop("price").to_numpy()
-
-# Split the data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(
-    cars, y, test_size=0.2, random_state=42
-)
-
-# Create a LightGBM dataset
-train_data = lgb.Dataset(
-    X_train, label=y_train, categorical_feature=categorical_columns
-)
-test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
-
-# # Set parameters for the LightGBM model
-params = {
-    "objective": "regression",
-    "metric": "mean_squared_error",
-    "boosting_type": "gbdt",
-    "learning_rate": 0.1,
-    "num_leaves": 31,
-    "verbose": -1,
-}
-
-# # Train the LightGBM model
-model = lgb.train(
-    params,
-    train_data,
-    num_boost_round=100,
-    valid_sets=[test_data],
-    callbacks=[lgb.early_stopping(stopping_rounds=10)],
-)
-
-# Make predictions
-y_pred = model.predict(X_test, num_iteration=model.best_iteration)
+    return X_train, X_test, y_train, y_test
 
 
-# Calculate RMSE and R2 score
-rmse = root_mean_squared_error(y_test, y_pred)
-r2 = r2_score(y_test, y_pred)
+def train_lightgbm(X_train, X_test, y_train, y_test, categorical_columns: list):
+    """Trains a LightGBM model and returns predictions."""
+    # Create LightGBM datasets
+    train_data = lgb.Dataset(
+        X_train, label=y_train, categorical_feature=categorical_columns
+    )
+    test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
 
-print(f"Root Mean Squared Error (RMSE): {rmse}")
-print(f"R-squared (R2): {r2}")
+    # Set parameters for LightGBM
+    params = {
+        "objective": "regression",
+        "metric": "mean_squared_error",
+        "boosting_type": "gbdt",
+        "learning_rate": 0.1,
+        "num_leaves": 31,
+        "verbose": -1,
+    }
 
-# Plot predicted vs actual values
-plt.figure(figsize=(10, 5))
+    # Train the model
+    model = lgb.train(
+        params,
+        train_data,
+        num_boost_round=100,
+        valid_sets=[test_data],
+        callbacks=[lgb.early_stopping(stopping_rounds=10)],
+    )
 
-# Plot 1: Predicted vs Actual values
-plt.subplot(1, 2, 1)
-plt.scatter(y_test, y_pred, edgecolor="k", alpha=0.7)
-plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--", lw=2)
-plt.xlabel("Actual")
-plt.ylabel("Predicted")
-plt.title("Predicted vs Actual")
+    # Predict on test set
+    y_pred = model.predict(X_test, num_iteration=model.best_iteration)
 
-# Plot 2: Residuals plot
-plt.subplot(1, 2, 2)
-residuals = y_test - y_pred
-plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.7)
-plt.axhline(y=0, color="r", linestyle="--", lw=2)
-plt.xlabel("Predicted")
-plt.ylabel("Residuals")
-plt.title("Residuals Plot")
+    return model, y_pred
 
-plt.tight_layout()
-plt.show()
-plt.close()
+
+def evaluate_model(y_test, y_pred):
+    """Evaluates the model using RMSE and R-squared metrics."""
+    rmse = mean_squared_error(y_test, y_pred, squared=False)  # RMSE
+    r2 = r2_score(y_test, y_pred)  # R-squared
+    print(f"Root Mean Squared Error (RMSE): {rmse}")
+    print(f"R-squared (R2): {r2}")
+    return rmse, r2
+
+
+def plot_results(y_test, y_pred):
+    """Plots the predicted vs actual values and residuals plot."""
+    plt.figure(figsize=(10, 5))
+
+    # Plot 1: Predicted vs Actual values
+    plt.subplot(1, 2, 1)
+    plt.scatter(y_test, y_pred, edgecolor="k", alpha=0.7)
+    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--", lw=2)
+    plt.xlabel("Actual")
+    plt.ylabel("Predicted")
+    plt.title("Predicted vs Actual")
+
+    # Plot 2: Residuals plot
+    plt.subplot(1, 2, 2)
+    residuals = y_test - y_pred
+    plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.7)
+    plt.axhline(y=0, color="r", linestyle="--", lw=2)
+    plt.xlabel("Predicted")
+    plt.ylabel("Residuals")
+    plt.title("Residuals Plot")
+
+    plt.tight_layout()
+    plt.show()
+    plt.close()
+
+
+def main():
+    # Load and prepare data
+    cars, categorical_columns = load_and_prepare_data(
+        "output/cleaned_engineered_input.parquet"
+    )
+
+    # Split data into train and test sets
+    X_train, X_test, y_train, y_test = split_data(cars, "price")
+
+    # Train the model and make predictions
+    model, y_pred = train_lightgbm(
+        X_train, X_test, y_train, y_test, categorical_columns
+    )
+
+    # Evaluate the model
+    evaluate_model(y_test, y_pred)
+
+    # Plot results
+    plot_results(y_test, y_pred)
