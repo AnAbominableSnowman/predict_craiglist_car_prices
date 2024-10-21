@@ -26,6 +26,10 @@ Someone has generously scraped 450k car postings off Craiglist and posted them o
 
 ### 1. Data Overview
 For an elegant and thorough EDA using y_data_profiling, see output/cleaned_df, and output/raw_df. In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues we will adress in LATER_SECTIOn. Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
+
+Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen word frequnecy (tf_idf EXPLAINED HERE) and odometer. Which suggests certain words are used to express older or younger cars. 
+
+PROBLEM: ADD num words as variable
 ### 2. Data Visualization
 - Histograms of numerical features (e.g., price distribution)
 - Scatter plots (e.g., price vs. mileage, price vs. year)
