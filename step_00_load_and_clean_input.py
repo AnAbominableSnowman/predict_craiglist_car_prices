@@ -36,6 +36,13 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def detect_if_description_exists(cars: pl.DataFrame) -> pl.DataFrame:
+    cars = cars.with_columns(
+        (pl.col("description").is_not_null()).alias("description_exists")
+    )
+    return cars
+
+
 def detect_if_carvana_ad(cars: pl.DataFrame) -> pl.DataFrame:
     cars = cars.with_columns(
         (
