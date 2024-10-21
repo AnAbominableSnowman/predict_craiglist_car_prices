@@ -1,0 +1,78 @@
+## Marketing Tracking of Craiglist's Used Cars
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Problem Definition](#problem-definition)
+3. [Data Collection](#data-collection)
+4. [Exploratory Data Analysis (EDA)](#exploratory-data-analysis-eda)
+5. [Data Preprocessing](#data-preprocessing)
+6. [Feature Engineering](#feature-engineering)
+7. [Modeling](#modeling)
+8. [Model Evaluation](#model-evaluation)
+9. [Conclusion and Future Work](#conclusion-and-future-work)
+10. [References](#references)
+
+## Introduction
+Growing up, a family friend was always pouring over Craiglist ad's, buying cars, fixing them and then flipping them. But each flip took him atleast forty hours of searching; I can still picture him in the dim light of the cathode ray tubes with booklets stacked around him. 
+
+This project is an ode to that family friend and tries to build a tool to predict Craiglist car prices. Similiar to the tools Kelly Blue Book and Captive Financials, like Ford Financing, would build and use. For our anonymous hero, she might use the tool to efficiently find underpriced offers and snatch them up before others do. To take it a step further, you could even create a synthetic set of one thousand vehicles. Train the model month to month, and then see how the prices on your synthetic, static vehicles change. This could give you insight into market movements. 
+
+
+## Problem Definition
+
+Someone has generously scraped 450k car postings off Craiglist and posted them on Kaggle. I have downloaded this zipped csv and our story begins here. The target variable, price, is in USD. We have eighteen useful covariates here including, a text description of the car, the paint color, the title status, odometer readings and the lat,long of the vehicle. 
+
+## Exploratory Data Analysis (EDA)
+
+### 1. Data Overview
+For an elegant and thorough EDA using y_data_profiling, see output/cleaned_df, and output/raw_df. In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues we will adress in LATER_SECTIOn. Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
+### 2. Data Visualization
+- Histograms of numerical features (e.g., price distribution)
+- Scatter plots (e.g., price vs. mileage, price vs. year)
+- Correlation heatmaps to show relationships between features
+
+### 3. Outliers Detection
+- Identifying and handling outliers in the data (e.g., unusually low/high prices)
+
+## Data Preprocessing
+### 1. Handling Missing Values
+- Techniques used (imputation, removing missing rows, etc.)
+
+### 2. Categorical Encoding
+- Converting categorical variables (e.g., car make and model) into numerical format using one-hot encoding or label encoding
+
+### 3. Data Normalization/Standardization
+- Scaling numerical features like mileage and year for use in certain models
+
+### 4. Splitting the Dataset
+- Splitting the dataset into training and test sets (e.g., 80/20 split)
+
+## Feature Engineering
+- Creating new features or modifying existing ones to improve model performance (e.g., creating age of car from year, mileage bins, etc.)
+- Feature selection: Identifying and retaining the most important features
+
+## Modeling
+### 1. Model Selection
+- Different models considered for prediction (e.g., Linear Regression, Random Forest, Gradient Boosting, etc.)
+- Justification for choosing the final model(s) based on performance, interpretability, etc.
+
+### 2. Model Training
+- Details on how the models were trained
+- Hyperparameter tuning (e.g., GridSearch, RandomSearch)
+
+## Model Evaluation
+- Performance metrics used (e.g., R-squared, RMSE, MAE)
+- Cross-validation results
+- Comparison of model performances
+- Discussion on overfitting or underfitting (if applicable)
+
+## Conclusion and Future Work
+- Summary of key findings from the project
+- Limitations of the current approach
+- Ideas for future improvements, such as:
+  - Using additional data (e.g., incorporating market trends)
+  - Testing with more complex models like deep learning
+  - Improving the feature set
+
+## References
+- List of papers, articles, or tools referenced during the project.
