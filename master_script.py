@@ -2,11 +2,12 @@ from step_00_load_and_clean_input import (
     unzip_and_load_csv,
     drop_unnecessary_columns,
     detect_if_carvana_ad,
-    clean_cylinders_column,
+    # clean_cylinders_column,
     switch_condition_to_ordinal,
     drop_out_impossible_values,
-    detect_if_description_exists,
     fill_missing_values_column_level,
+    delete_description_if_caravana,
+    remove_duplicate_rows,
 )
 from step_01_feature_engineering import (
     remove_punc_short_words_lower_case,
@@ -30,14 +31,14 @@ cars = drop_unnecessary_columns(cars)
 # affected the data.
 cars.write_parquet("output/raw_input.parquet")
 
-## about %10 of data are carvana ads
+# # ## about %10 of data are carvana ads
 cars = detect_if_carvana_ad(cars)
+cars = delete_description_if_caravana(cars)
+# cars = detect_if_description_exists(cars)
 
-cars = detect_if_description_exists(cars)
-
-# # cylinders can be ints but aren't so I clean them to int.
-cars = clean_cylinders_column(cars)
-# condition has a natural ranking so I encode that. IE. like new is better then fair
+# # # cylinders can be ints but aren't so I clean them to int.
+# cars = clean_cylinders_column(cars)
+# # condition has a natural ranking so I encode that. IE. like new is better then fair
 cars = switch_condition_to_ordinal(cars)
 
 # These values are incredibly rare and most of these values
@@ -52,6 +53,7 @@ cars = drop_out_impossible_values(cars, "price", 2_000, False)
 # I can reduce the problem.
 cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
 
+cars = remove_duplicate_rows(cars)
 cars.write_parquet("output/cleaned_and_edited_input.parquet")
 
 # lightGBM takes care of null and missing values nicely. But
@@ -74,7 +76,7 @@ cars_imputed_missing_for_lin_regrs = fill_missing_values_column_level(
 cars_imputed_missing_for_lin_regrs.write_parquet(
     "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet"
 )
-
+print("safe")
 
 cars_imputed_missing_for_lin_regrs = pd.read_parquet(
     "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet"

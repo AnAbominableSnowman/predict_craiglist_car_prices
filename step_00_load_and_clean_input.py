@@ -43,10 +43,21 @@ def detect_if_description_exists(cars: pl.DataFrame) -> pl.DataFrame:
     return cars
 
 
+def delete_description_if_caravana(cars: pl.DataFrame) -> pl.DataFrame:
+    cars = cars.with_columns(
+        pl.when(pl.col("carvana_ad"))
+        .then(pl.lit(""))
+        .otherwise(pl.col("description"))
+        .alias("description")
+    )
+    return cars
+
+
 def detect_if_carvana_ad(cars: pl.DataFrame) -> pl.DataFrame:
     cars = cars.with_columns(
         (
             pl.col("description")
+            .fill_null("")
             .str.to_lowercase()
             .str.contains("carvana is the safer way to buy a car")
         ).alias("carvana_ad")
@@ -86,6 +97,11 @@ def drop_out_impossible_values(cars, col, col_limit, upper: True) -> pl.DataFram
         # Log the filter and number of rows affected
         print(f"Filter applied: {col} <  {col_limit}")
     print(f"Rows removed: {rows_to_nullify}")
+    return cars
+
+
+def remove_duplicate_rows(cars: pl.DataFrame) -> pl.DataFrame:
+    cars = cars.unique()
     return cars
 
 

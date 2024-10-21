@@ -27,9 +27,11 @@ Someone has generously scraped 450k car postings off Craiglist and posted them o
 ### 1. Data Overview
 For an elegant and thorough EDA using y_data_profiling, see output/cleaned_df, and output/raw_df. In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues we will adress in LATER_SECTIOn. Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
 
-Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen word frequnecy (tf_idf EXPLAINED HERE) and odometer. Which suggests certain words are used to express older or younger cars. 
+Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen word frequnecy (tf_idf EXPLAINED HERE) and odometer. Which suggests certain words are used to more or less frequently depending on car mileage; this should conform to expectations. No one describes their 2022 Sports car as reliable; that term of endearment is for the family workhorse that's been picking up groceries for a decade or more. Finally, manufacturer shows a correlation with cylinders and transimiison type which again confroms to common sense. FInally, about eleven percent of the rows appear to be exact duplicates. They could be truly differnt cars but to match, price and odometer, color, etc exactly strains belief so we need to investiage. 
+
 
 PROBLEM: ADD num words as variable
+
 ### 2. Data Visualization
 - Histograms of numerical features (e.g., price distribution)
 - Scatter plots (e.g., price vs. mileage, price vs. year)
@@ -38,22 +40,24 @@ PROBLEM: ADD num words as variable
 ### 3. Outliers Detection
 - Identifying and handling outliers in the data (e.g., unusually low/high prices)
 
-## Data Preprocessing
+## Data Preprocessing and Feature Engineering
 ### 1. Handling Missing Values
-- Techniques used (imputation, removing missing rows, etc.)
+Missing price or Odometer readings were removed; they are too crucial to try to impute. Missing values were imputed only for the linear regression approach and the method of imputation was just a standard mean or mode. A brief tour into missing values is in order. All columns are likely a mix Missing Not at Random and Missing at Random. Missing descriptions are probably missing because it would be hard to give a good description of a bad car. A rusted, sun beaten car missing a paint color is missing at random becuase the missingness is really tied to the condition of the car, not the paint color itself. This missingness should cast a bit of doubt on any results from linear regression.
 
-### 2. Categorical Encoding
-- Converting categorical variables (e.g., car make and model) into numerical format using one-hot encoding or label encoding
+### 3. Filtering Data
+Craigslist seems especially prone to messy data for two reasons; individual posters are not professionals with a corporate image, hiding info is generally advantagous and most importantly price anchoring. Good cars worth a lot are generally owned by more interenet savy people, and spending the time to set up a great ad to gain 2% price is worth more on a more expensive car. Bad stuff is best left unmentioned and then discussed later if asked about.  
 
-### 3. Data Normalization/Standardization
-- Scaling numerical features like mileage and year for use in certain models
+The other key problem is price anchoring (INSERT HYPER LINK HERE). The highest a buyer will sell his car for is the first price they mention. Much better to let the buyer offer a price and then ask for more regardless. By not listing a price or listing for silly valuse like $9 million or $1, they can avoid anchor their price. 
 
+With this in mind, I applied several filters. I removed any cars less then $2000 as these were scrap/parts cars or price anchoring and any cars over $125,000. With luxury used car markets online, most of the ads i found above $125,000 seemed illegitmate. Finally, I removed any cars over 300,000 miles. That is a reasonable upper bound for a cars lifespand and most of the ones above it were price anchoring/creating silly values to hide bad info. Lastly, I removed all duplicate rows removing about eleven percent of the data. 
+
+### 2. Feature Engineering
+This mainly took two parts. The first is more standard feature engineering. I created flags for if the ad had a description and if the ad was a carvana ad. I also took condition and converted from categorical to ordinal. Excellent, fair and poor have an obvious order and that information should be retained. Similairly, number of cylidners was converted from a string to a number to retain that ordinal info.  
+
+The more interesting peice of feature engineering was analyzing the description text. A lot of text analysis centers on classification and sentiment analysis.A first apporach was a bag of words style approach but I pivoted to term frequency, inverse document frequency. A deeper dive is here (ADD HYPER LINK HERE DEVIN). To make a long story short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that are show up alot in a specific document are weighted more heavily. In the end, you affix a column of words and how their score for each individual row, ie, description. We can then use these as variables later in the modeling. 
 ### 4. Splitting the Dataset
-- Splitting the dataset into training and test sets (e.g., 80/20 split)
+I choose a train, valid, test split of 75/20/5.
 
-## Feature Engineering
-- Creating new features or modifying existing ones to improve model performance (e.g., creating age of car from year, mileage bins, etc.)
-- Feature selection: Identifying and retaining the most important features
 
 ## Modeling
 ### 1. Model Selection
