@@ -8,6 +8,8 @@ from numpy import ndarray
 import os
 from hyperopt import hp, fmin, tpe
 import pickle
+import json
+from pathlib import Path
 
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
@@ -63,9 +65,6 @@ def train_lightgbm(
     return model, y_pred, evals_result
 
 
-import json
-
-
 def evaluate_model(y_test, y_pred, model_path):
     rmse = root_mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
@@ -73,10 +72,16 @@ def evaluate_model(y_test, y_pred, model_path):
     print(f"R-squared (R2): {r2}")
     # Save results to a JSON file
     results = {"RMSE": rmse, "R-squared": r2}
+    # Define the model path
+    # Define the model path
+    model_path = Path(model_path)  # Update with your actual path
 
-    with open(f"{model_path}/evaluation_results.json", "w") as json_file:
+    # Create the directory if it does not exist
+    model_path.mkdir(parents=True, exist_ok=True)
+
+    # Save results to JSON file
+    with open(model_path / "evaluation_results.json", "w") as json_file:
         json.dump(results, json_file)
-
     return rmse, r2
 
 
@@ -101,7 +106,7 @@ def plot_results(y_test, y_pred, save_path):
     directory = os.path.dirname(f"{save_path}")
     if not os.path.exists(directory):
         os.makedirs(directory)
-    plt.savefig(f"{save_path}/predicted_vs_actual.png")
+    plt.savefig(f"{save_path}predicted_vs_actual.png")
     plt.close()
 
 
@@ -142,8 +147,9 @@ def train_fit_score_light_gbm(
     if col_subset is not None:
         if "price" not in col_subset:
             col_subset.append("price")
-        cars = cars.select(*col_subset, "price")
-    model_name = "LightGBM"
+        cars = cars[col_subset]
+
+    model_name = "results/LightGBM"
     # Define the search space for Hyperopt (if not using predefined params)
     space = {
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
@@ -165,10 +171,10 @@ def train_fit_score_light_gbm(
         # Use the provided params directly
         best_params = params
 
-    selected_features = [col for col in cars.columns]
-
-    X_train, X_test, y_train, y_test = split_data(cars[selected_features], "price")
-
+    if col_subset is not None:
+        X_train, X_test, y_train, y_test = split_data(cars[col_subset], "price")
+    else:
+        X_train, X_test, y_train, y_test = split_data(cars, "price")
     # Prepare params for the final model
     final_params = {
         "objective": "regression",
@@ -185,12 +191,11 @@ def train_fit_score_light_gbm(
         X_train, X_test, y_train, y_test, final_params
     )
 
-    evaluate_model(y_test, y_pred)
-
-    model_name += "/"
+    model_name = model_name + "/"
 
     if output_path is not None:
         model_name = output_path
+    evaluate_model(y_test, y_pred, model_name)
     plot_results(y_test, y_pred, model_name)
     plot_rmse_over_rounds(evals_result, model_name)
 

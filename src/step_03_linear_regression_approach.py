@@ -30,13 +30,22 @@ def train_fit_score_linear_regression(
     if log:
         y_pred = np.exp(y_pred)
         y_test = np.exp(y_test)
+        model_name = "Log price Linear Regression/"
+    else:
+        model_name = "Simple Linear Regression of Price by Odometer/"
 
-    plot_results(y_test, y_pred, log)
-    print_results(y_test, y_pred, model)
+    save_path = "results/"
+    # Ensure the directory exists
+    directory = os.path.dirname(f"{save_path}{model_name}")
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+    plot_results(y_test, y_pred, log, directory)
+    print_results(y_test, y_pred, model, directory)
     return model
 
 
-def plot_results(y_test: ndarray, y_pred: ndarray, log: bool) -> None:
+def plot_results(y_test: ndarray, y_pred: ndarray, log: bool, directory) -> None:
     # Plot predicted vs actual values
     plt.figure(figsize=(10, 5))
 
@@ -59,23 +68,12 @@ def plot_results(y_test: ndarray, y_pred: ndarray, log: bool) -> None:
 
     plt.tight_layout()
 
-    if log:
-        model_name = "Log price Linear Regression/"
-    else:
-        model_name = "Simple Linear Regression of Price by Odometer/"
-
-    save_path = "output/"
-    # Ensure the directory exists
-    directory = os.path.dirname(f"{save_path}{model_name}")
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
     plt.savefig(f"{directory}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
 
 
-def print_results(y_test: ndarray, y_pred: ndarray, model) -> None:
+def print_results(y_test: ndarray, y_pred: ndarray, model, directory) -> None:
     # Calculate RMSE and R2 score
-    rmse = np.sqrt(root_mean_squared_error(y_test, y_pred))
+    rmse = root_mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
     print(f"Root Mean Squared Error (RMSE): {rmse}")
@@ -84,6 +82,9 @@ def print_results(y_test: ndarray, y_pred: ndarray, model) -> None:
     # Print the summary of the regression model (including beta coefficients, p-values, F-statistic, etc.)
     print("\nModel Summary:")
     print(model.summary())
+    with open(f"{directory}/ols_summary.txt", "w") as f:
+        f.write(model.summary().as_text())
+        f.write(f"rsme is: {rmse}")
 
 
 def one_hot_columns(cars: pd.DataFrame) -> pd.DataFrame:
