@@ -70,9 +70,47 @@ cars_imputed_missing_for_lin_regrs = fill_missing_values_column_level(
     ],
 )
 
-# # Write the DataFrame to a Parquet file
-cars_imputed_missing_for_lin_regrs.write_parquet(
-    "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet"
+
+def write_df_to_parquet(df: pl.DataFrame, file_path: str) -> None:
+    try:
+        # Optionally, perform sanity checks on the DataFrame before writing
+        if df.is_empty():
+            raise ValueError("DataFrame is empty, nothing to write.")
+
+        # Check for any null or invalid data in the columns
+        null_counts = df.null_count().to_dict()
+        print(f"Null counts in columns: {null_counts}")
+
+        # Write the DataFrame to Parquet
+        df.write_parquet(file_path)
+        print("Data successfully written to Parquet.")
+    except Exception as e:
+        # Handle the error with more information
+        raise RuntimeError(f"Failed to write DataFrame to Parquet: {e}") from e
+
+
+def check_mixed_types_all(df: pl.DataFrame) -> None:
+    for col_name in df.columns:
+        unique_types = (
+            df.select(
+                pl.col(col_name).map_elements(lambda x: type(x).__name__).unique()
+            )
+            .to_series(0)
+            .to_list()
+        )
+
+        if len(unique_types) > 1:
+            print(f"Column '{col_name}' contains mixed types: {unique_types}")
+        else:
+            print(f"Column '{col_name}' has a consistent type: {unique_types[0]}")
+
+
+# Example usage
+check_mixed_types_all(cars_imputed_missing_for_lin_regrs)
+# Call the function
+write_df_to_parquet(
+    cars_imputed_missing_for_lin_regrs,
+    "output/cleaned_input_with_imputed_missing_values_for_linr_regrsn.parquet",
 )
 print("safe")
 
