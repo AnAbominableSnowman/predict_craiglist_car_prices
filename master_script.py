@@ -148,6 +148,19 @@ cars = remove_punc_short_words_lower_case(cars)
 cars = create_tf_idf_cols(cars, 500)
 cars.write_parquet("output/cleaned_edited_feature_engineered_input.parquet")
 
+
+lightgbm_params = {
+    "objective": "regression",
+    "metric": "mean_squared_error",
+    "boosting_type": "gbdt",
+    "learning_rate": params["learning_rate"],
+    "max_depth": int(params["max_depth"]),
+    "min_data_in_leaf": 5000,  # Fixed value
+    "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
+    "verbose": -1,
+}
+
+
 print("start fitting Light GBM")
 # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
 train_fit_score_light_gbm(input_path="cleaned_edited_feature_engineered_input")

@@ -47,14 +47,14 @@ Missing price or Odometer readings were removed; they are too crucial to try to 
 ### 3. Filtering Data
 Craigslist seems especially prone to messy data for two reasons; individual posters are not professionals with a corporate image, hiding info is generally advantagous and most importantly price anchoring. Good cars worth a lot are generally owned by more interenet savy people, and spending the time to set up a great ad to gain 2% price is worth more on a more expensive car. Bad stuff is best left unmentioned and then discussed later if asked about.  
 
-The other key problem is price anchoring (INSERT HYPER LINK HERE). The highest a buyer will sell his car for is the first price they mention. Much better to let the buyer offer a price and then ask for more regardless. By not listing a price or listing for silly valuse like $9 million or $1, they can avoid anchor their price. 
+The other key problem is [price anchoring](https://en.wikipedia.org/wiki/Anchoring_effect). The highest a buyer will sell his car for is the first price they mention. Much better to let the buyer offer a price and then ask for more regardless. By not listing a price or listing for silly valuse like $9 million or $1, they can avoid anchor their price. 
 
 With this in mind, I applied several filters. I removed any cars less then $2000 as these were scrap/parts cars or price anchoring and any cars over $125,000. With luxury used car markets online, most of the ads i found above $125,000 seemed illegitmate. Finally, I removed any cars over 300,000 miles. That is a reasonable upper bound for a cars lifespand and most of the ones above it were price anchoring/creating silly values to hide bad info. Lastly, I removed all duplicate rows removing about eleven percent of the data. 
 
 ### 2. Feature Engineering
 This mainly took two parts. The first is more standard feature engineering. I created flags for if the ad had a description and if the ad was a carvana ad. I also took condition and converted from categorical to ordinal. Excellent, fair and poor have an obvious order and that information should be retained. Similairly, number of cylidners was converted from a string to a number to retain that ordinal info.  
 
-The more interesting peice of feature engineering was analyzing the description text. A lot of text analysis centers on classification and sentiment analysis.A first apporach was a bag of words style approach but I pivoted to term frequency, inverse document frequency. A deeper dive is here (ADD HYPER LINK HERE DEVIN). To make a long story short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that are show up alot in a specific document are weighted more heavily. In the end, you affix a column of words and how their score for each individual row, ie, description. We can then use these as variables later in the modeling. 
+The more interesting peice of feature engineering was analyzing the description text. A lot of text analysis centers on classification and sentiment analysis.A first apporach was a bag of words style approach but I pivoted to [term frequency, inverse document frequency](https://builtin.com/articles/tf-idf). To make a long story short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that are show up alot in a specific document are weighted more heavily. In the end, you affix a column of words and how their score for each individual row, ie, description. We can then use these as variables later in the modeling. 
 ### 4. Splitting the Dataset
 I choose a train, valid, test split of 75/20/5.
 
@@ -65,7 +65,20 @@ I iterated through four models in this project progressively improving. My first
 
 Next model, I wanted to tackle two problems; many negative price predictions and decrease bias at the cost of variance. To do this, I started by logging price. The intuition behind this is that it price spans several magnitudes and predicting the log will never be negative. The second prong, decreasing bias, was achieved by introducing a few extra terms to the model: year, manufacturer, state, title_status and paint_color. I selected these variables because they had low cardinality, lived experience/common sense and low rates of missing values. Variables with a lot of missing values would require a lot of mean/mode imputation reducing the value of the variable. Variables with high cardinality redcue model interptablity and risk dicing up data too thinly. 
 
+Linear regression isn't going to cut it on this data set so I'll try another tool, Light GBM. Let's try a naive approach first, using all of our useable varialbes and leaving out any words or feature engineered variables. Consider it more of a base line approach. 
 
+From here, there is a kaledoscope of options to try next: hyper parameter tuning, add it text data from the description, utilize lat and long to pull in zip code data, implementing crossvalidation, explore the time and date of posting. 
+
+The first stop was addressing overfit and while here, I might as well set up hyper opt. Hyperopt is one of my favorite tools for hyper optimization. It uses a bayesian framework to more efficeintly search using prior runs to inform future runs. An analogy, You are looking for a plane that flew between New York and London and crashed in the ocean. If you find debries, you should bring all your searchers in to that one spot and really comb that location.
+
+There are three main hyperparemeters I tried to optimize; learning rate, max depth and number of tf_idf words. We are not tuning on number of leaves.I have fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html)
+ Because Light GBM grows leaf first, not level first. By fitting max depth and setting leaves to be equal to it, you just back yourself in a level first methodology ala random forest. This is okay if you don't have over fit, but we do, so were doing it like this instead. 
+
+
+<div style="display: flex; gap: 40px;">
+    <img src="LightGBM_with_words/predicted_vs_actual_og_model.png" alt="Image 1">
+    <!-- <img src="LightGBM_with_words/shap_summary_plot_og_model.png" alt="Image 2"> -->
+</div>
 
 PROBLEM: ASK BRAD HOW HE PICKS MODEL ONE SD BEFORE BEST ITERATION.
 ### 2. Model Training
@@ -85,6 +98,11 @@ PROBLEM: ASK BRAD HOW HE PICKS MODEL ONE SD BEFORE BEST ITERATION.
   - Using additional data (e.g., incorporating market trends)
   - Testing with more complex models like deep learning
   - Improving the feature set
+
+## Future work
+Pull out useful info from  craigslist carvana ad's. Today there is too much static data in the descriptions that overwhelems TF_idf, so I turn carvana ad's into a boolean varialbe. A further analysis could just delete the boiler plate and extract the nuggets.
+
+Find and utilzie the images. The current data only points to image URLs; I could go an download all these images and then utilize them. Thats beyond the scope of this project today. But from here, you could build a CVML model to detect car quality. Specifically looking for things like rust, dents, and scratches. I know this is possible and have worekd on it before but can't share more without spilling the secret sauce. 
 
 ## References
 - List of papers, articles, or tools referenced during the project.

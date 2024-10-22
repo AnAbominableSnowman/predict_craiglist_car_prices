@@ -1,3 +1,4 @@
+from __future__ import annotations
 import lightgbm as lgb
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -113,6 +114,7 @@ def objective(params, cars, target_column):
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
         "min_data_in_leaf": 5000,  # Fixed value
+        "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
         "verbose": -1,
     }
 
@@ -124,21 +126,28 @@ def objective(params, cars, target_column):
     return rmse
 
 
-def train_fit_score_light_gbm(input_path: str):
+def train_fit_score_light_gbm(input_path: str, params):
     cars = load_and_prepare_data(f"output/{input_path}.parquet")
 
-    # Define the search space for Hyperopt (without num_word_cols)
+    # Define the search space for Hyperopt (if not using predefined params)
     space = {
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
         "max_depth": hp.quniform("max_depth", 4, 10, 1),
     }
 
-    best_params = fmin(
-        fn=lambda params: objective(params, cars, "price"),
-        space=space,
-        algo=tpe.suggest,
-        max_evals=10,
-    )
+    # If no params are passed, run the optimization using Hyperopt's fmin
+    if params is None:
+        best_params = fmin(
+            fn=lambda params: objective(params, cars, "price"),
+            space=space,
+            algo=tpe.suggest,
+            max_evals=10,
+        )
+        # Convert float depth to int
+        best_params["max_depth"] = int(best_params["max_depth"])
+    else:
+        # Use the provided params directly
+        best_params = params
 
     selected_features = [col for col in cars.columns]
 
@@ -151,7 +160,8 @@ def train_fit_score_light_gbm(input_path: str):
         "boosting_type": "gbdt",
         "min_data_in_leaf": 5000,
         "learning_rate": best_params["learning_rate"],
-        "max_depth": int(best_params["max_depth"]),
+        "max_depth": best_params["max_depth"],
+        "num_leaves": int(2 ** int(best_params["max_depth"]) * 0.65),
         "verbose": -1,
     }
 
@@ -167,6 +177,7 @@ def train_fit_score_light_gbm(input_path: str):
     plot_results(y_test, y_pred, model_name)
     plot_rmse_over_rounds(evals_result, model_name)
 
+    # Save the model and parameters
     with open(f"{model_name}/best_lightgbm_model.pkl", "wb") as file:
         pickle.dump(model, file)
     with open(f"{model_name}/final_params.pkl", "wb") as file:
