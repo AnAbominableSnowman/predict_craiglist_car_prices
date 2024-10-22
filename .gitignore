@@ -2,3 +2,5 @@
 /inputs/
 /cleaned_input.parquet
 /output/
+/shap_plots/
+/__pycache__/

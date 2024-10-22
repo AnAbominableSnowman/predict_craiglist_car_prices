@@ -1,0 +1,90 @@
+## Marketing Tracking of Craiglist's Used Cars
+
+## Table of Contents
+1. [Introduction](#introduction)
+2. [Problem Definition](#problem-definition)
+3. [Data Collection](#data-collection)
+4. [Exploratory Data Analysis (EDA)](#exploratory-data-analysis-eda)
+5. [Data Preprocessing](#data-preprocessing)
+6. [Feature Engineering](#feature-engineering)
+7. [Modeling](#modeling)
+8. [Model Evaluation](#model-evaluation)
+9. [Conclusion and Future Work](#conclusion-and-future-work)
+10. [References](#references)
+
+## Introduction
+Growing up, a family friend was always pouring over Craiglist ad's, buying cars, fixing them and then flipping them. But each flip took him atleast forty hours of searching; I can still picture him in the dim light of the cathode ray tubes with booklets stacked around him. 
+
+This project is an ode to that family friend and tries to build a tool to predict Craiglist car prices. Similiar to the tools Kelly Blue Book and Captive Financials, like Ford Financing, would build and use. For our anonymous hero, she might use the tool to efficiently find underpriced offers and snatch them up before others do. To take it a step further, you could even create a synthetic set of one thousand vehicles. Train the model month to month, and then see how the prices on your synthetic, static vehicles change. This could give you insight into market movements. 
+
+
+## Problem Definition
+
+Someone has generously scraped 450k car postings off Craiglist and posted them on Kaggle. I have downloaded this zipped csv and our story begins here. The target variable, price, is in USD. We have eighteen useful covariates here including, a text description of the car, the paint color, the title status, odometer readings and the lat,long of the vehicle. 
+
+## Exploratory Data Analysis (EDA)
+
+### 1. Data Overview
+For an elegant and thorough EDA using y_data_profiling, see output/cleaned_df, and output/raw_df. In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues we will adress in LATER_SECTIOn. Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
+
+Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen word frequnecy (tf_idf EXPLAINED HERE) and odometer. Which suggests certain words are used to more or less frequently depending on car mileage; this should conform to expectations. No one describes their 2022 Sports car as reliable; that term of endearment is for the family workhorse that's been picking up groceries for a decade or more. Finally, manufacturer shows a correlation with cylinders and transimiison type which again confroms to common sense. FInally, about eleven percent of the rows appear to be exact duplicates. They could be truly differnt cars but to match, price and odometer, color, etc exactly strains belief so we need to investiage. 
+
+
+PROBLEM: ADD num words as variable
+
+### 2. Data Visualization
+- Histograms of numerical features (e.g., price distribution)
+- Scatter plots (e.g., price vs. mileage, price vs. year)
+- Correlation heatmaps to show relationships between features
+
+### 3. Outliers Detection
+- Identifying and handling outliers in the data (e.g., unusually low/high prices)
+
+## Data Preprocessing and Feature Engineering
+### 1. Handling Missing Values
+Missing price or Odometer readings were removed; they are too crucial to try to impute. Missing values were imputed only for the linear regression approach and the method of imputation was just a standard mean or mode. A brief tour into missing values is in order. All columns are likely a mix Missing Not at Random and Missing at Random. Missing descriptions are probably missing because it would be hard to give a good description of a bad car. A rusted, sun beaten car missing a paint color is missing at random becuase the missingness is really tied to the condition of the car, not the paint color itself. This missingness should cast a bit of doubt on any results from linear regression.
+
+### 3. Filtering Data
+Craigslist seems especially prone to messy data for two reasons; individual posters are not professionals with a corporate image, hiding info is generally advantagous and most importantly price anchoring. Good cars worth a lot are generally owned by more interenet savy people, and spending the time to set up a great ad to gain 2% price is worth more on a more expensive car. Bad stuff is best left unmentioned and then discussed later if asked about.  
+
+The other key problem is price anchoring (INSERT HYPER LINK HERE). The highest a buyer will sell his car for is the first price they mention. Much better to let the buyer offer a price and then ask for more regardless. By not listing a price or listing for silly valuse like $9 million or $1, they can avoid anchor their price. 
+
+With this in mind, I applied several filters. I removed any cars less then $2000 as these were scrap/parts cars or price anchoring and any cars over $125,000. With luxury used car markets online, most of the ads i found above $125,000 seemed illegitmate. Finally, I removed any cars over 300,000 miles. That is a reasonable upper bound for a cars lifespand and most of the ones above it were price anchoring/creating silly values to hide bad info. Lastly, I removed all duplicate rows removing about eleven percent of the data. 
+
+### 2. Feature Engineering
+This mainly took two parts. The first is more standard feature engineering. I created flags for if the ad had a description and if the ad was a carvana ad. I also took condition and converted from categorical to ordinal. Excellent, fair and poor have an obvious order and that information should be retained. Similairly, number of cylidners was converted from a string to a number to retain that ordinal info.  
+
+The more interesting peice of feature engineering was analyzing the description text. A lot of text analysis centers on classification and sentiment analysis.A first apporach was a bag of words style approach but I pivoted to term frequency, inverse document frequency. A deeper dive is here (ADD HYPER LINK HERE DEVIN). To make a long story short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that are show up alot in a specific document are weighted more heavily. In the end, you affix a column of words and how their score for each individual row, ie, description. We can then use these as variables later in the modeling. 
+### 4. Splitting the Dataset
+I choose a train, valid, test split of 75/20/5.
+
+
+## Modeling
+### 1. Model Selection
+I iterated through four models in this project progressively improving. My first model was the first stop on almost any good regression data science project, linear regression. The first attempt to get a good baseline was oridanry least squares regression with Odometer as my covariate. The good news is that model trains incredibly quickly and it is the most interptable of all models. I got a final RMSE of XYZ and an R^2 of DDD. So the models off bya bout XYZ dollars on average and odometer explains about DDD % of the total variation in price. The models extreme interptablity is also nice; any car's value starts at UBK and every consectutive mile reduces value by POI cents. In the interest of brevity, I won't dive too deeply into checking the assumptions because they are bad. Linearity, homoskedascity, normality, all fail and with it, any ability to interpt the model. So if you have an uninterptable and innaccurate model, its time to go back to the drawing board. 
+
+Next model, I wanted to tackle two problems; many negative price predictions and decrease bias at the cost of variance. To do this, I started by logging price. The intuition behind this is that it price spans several magnitudes and predicting the log will never be negative. The second prong, decreasing bias, was achieved by introducing a few extra terms to the model: year, manufacturer, state, title_status and paint_color. I selected these variables because they had low cardinality, lived experience/common sense and low rates of missing values. Variables with a lot of missing values would require a lot of mean/mode imputation reducing the value of the variable. Variables with high cardinality redcue model interptablity and risk dicing up data too thinly. 
+
+
+
+PROBLEM: ASK BRAD HOW HE PICKS MODEL ONE SD BEFORE BEST ITERATION.
+### 2. Model Training
+- Details on how the models were trained
+- Hyperparameter tuning (e.g., GridSearch, RandomSearch)
+
+## Model Evaluation
+- Performance metrics used (e.g., R-squared, RMSE, MAE)
+- Cross-validation results
+- Comparison of model performances
+- Discussion on overfitting or underfitting (if applicable)
+
+## Conclusion and Future Work
+- Summary of key findings from the project
+- Limitations of the current approach
+- Ideas for future improvements, such as:
+  - Using additional data (e.g., incorporating market trends)
+  - Testing with more complex models like deep learning
+  - Improving the feature set
+
+## References
+- List of papers, articles, or tools referenced during the project.
