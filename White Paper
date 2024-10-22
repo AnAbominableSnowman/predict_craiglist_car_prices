@@ -63,8 +63,8 @@ I choose a train, valid, test split of 75/20/5.
 ### 1. Model Selection
 I iterated through four models in this project progressively improving. My first model was the first stop on almost any good regression data science project, linear regression. The first attempt to get a good baseline was oridanry least squares regression with Odometer as my covariate. The good news is that model trains incredibly quickly and it is the most interptable of all models. I got a final RMSE of XYZ and an R^2 of DDD. So the models off bya bout XYZ dollars on average and odometer explains about DDD % of the total variation in price. The models extreme interptablity is also nice; any car's value starts at UBK and every consectutive mile reduces value by POI cents. In the interest of brevity, I won't dive too deeply into checking the assumptions because they are bad. Linearity, homoskedascity, normality, all fail and with it, any ability to interpt the model. So if you have an uninterptable and innaccurate model, its time to go back to the drawing board. 
 
-Next 
-.
+Next model, I wanted to tackle two problems; many negative price predictions and decrease bias at the cost of variance. To do this, I started by logging price. The intuition behind this is that it price spans several magnitudes and predicting the log will never be negative. The second prong, decreasing bias, was achieved by introducing a few extra terms to the model.
+
 
 
 PROBLEM: ASK BRAD HOW HE PICKS MODEL ONE SD BEFORE BEST ITERATION.

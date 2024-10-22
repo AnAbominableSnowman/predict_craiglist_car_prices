@@ -20,14 +20,35 @@ def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFram
     return pl.read_csv(csv_file_path)
 
 
-def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
-    cars = cars.with_columns(
-        pl.when(pl.col("cylinders").is_not_null() & (pl.col("cylinders") != ""))
-        .then(pl.col("cylinders").str.replace_all(r"\D", ""))
-        .otherwise(None)
-        .alias("cylinders")
-    )
-    return cars
+# This function was sadly shuttered as I was getting all sorts of werid hisenbugs
+# thread '<unnamed>' panicked at crates\polars-core\src\series\from.rs:117:22:
+# called `Option::unwrap()` on a `None` value
+# note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+# Traceback (most recent call last):
+#   File "c:\git_repos\video_game_sales\video_game_sales_predictions\master_script.py", line 78, in <module>
+#     cars_imputed_missing_for_lin_regrs.write_parquet(
+#   File "C:\git_repos\video_game_sales\video_game_sales_predictions\venv\Lib\site-packages\polars\dataframe\frame.py", line 3837, in write_parquet
+#     self._df.write_parquet(
+# pyo3_runtime.PanicException: called `Option::unwrap()` on a `None` value
+# PS C:\git_repos\video_game_sales\video_game_sales_predictions> ^C
+
+# def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
+#     cars = cars.with_columns(
+#         pl.when(pl.col("cylinders").is_not_null() & (pl.col("cylinders") != ""))
+#         .then(pl.col("cylinders").str.replace_all(r"\D", ""))
+#         .otherwise(pl.lit(""))
+#         .cast(pl.Utf8)
+#         .alias("cylinders")
+#     )
+
+#     cars = cars.with_columns(
+#         pl.when(pl.col("cylinders") == "")
+#         .then(pl.lit(None))
+#         .otherwise(pl.col("cylinders"))
+#         .cast(pl.Utf8)
+#         .alias("cylinders")
+#     )
+#     return cars
 
 
 def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:

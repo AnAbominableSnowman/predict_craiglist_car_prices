@@ -2,7 +2,6 @@ from step_00_load_and_clean_input import (
     unzip_and_load_csv,
     drop_unnecessary_columns,
     detect_if_carvana_ad,
-    clean_cylinders_column,
     switch_condition_to_ordinal,
     drop_out_impossible_values,
     fill_missing_values_column_level,
@@ -37,9 +36,6 @@ cars = detect_if_description_exists(cars)
 cars = detect_if_carvana_ad(cars)
 cars = delete_description_if_caravana(cars)
 
-
-# # # cylinders can be ints but aren't so I clean them to int.
-cars = clean_cylinders_column(cars)
 # # condition has a natural ranking so I encode that. IE. like new is better then fair
 cars = switch_condition_to_ordinal(cars)
 
