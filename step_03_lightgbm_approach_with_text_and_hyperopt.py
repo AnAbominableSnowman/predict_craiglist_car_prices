@@ -63,11 +63,20 @@ def train_lightgbm(
     return model, y_pred, evals_result
 
 
-def evaluate_model(y_test, y_pred):
+import json
+
+
+def evaluate_model(y_test, y_pred, model_path):
     rmse = root_mean_squared_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
+    # Save results to a JSON file
+    results = {"RMSE": rmse, "R-squared": r2}
+
+    with open(f"{model_path}/evaluation_results.json", "w") as json_file:
+        json.dump(results, json_file)
+
     return rmse, r2
 
 
@@ -126,9 +135,15 @@ def objective(params, cars, target_column):
     return rmse
 
 
-def train_fit_score_light_gbm(input_path: str, params):
+def train_fit_score_light_gbm(
+    input_path: str, params, output_path: str, col_subset: list[str]
+):
     cars = load_and_prepare_data(f"output/{input_path}.parquet")
-
+    if col_subset is not None:
+        if "price" not in col_subset:
+            col_subset.append("price")
+        cars = cars.select(*col_subset, "price")
+    model_name = "LightGBM"
     # Define the search space for Hyperopt (if not using predefined params)
     space = {
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
@@ -145,6 +160,7 @@ def train_fit_score_light_gbm(input_path: str, params):
         )
         # Convert float depth to int
         best_params["max_depth"] = int(best_params["max_depth"])
+        model_name = model_name + "Hyperopt"
     else:
         # Use the provided params directly
         best_params = params
@@ -171,9 +187,10 @@ def train_fit_score_light_gbm(input_path: str, params):
 
     evaluate_model(y_test, y_pred)
 
-    model_name = "LightGBM"
     model_name += "/"
 
+    if output_path is not None:
+        model_name = output_path
     plot_results(y_test, y_pred, model_name)
     plot_rmse_over_rounds(evals_result, model_name)
 
