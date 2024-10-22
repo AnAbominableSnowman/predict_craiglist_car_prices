@@ -6,6 +6,7 @@ from sklearn.metrics import r2_score, root_mean_squared_error
 from numpy import ndarray
 import os
 from hyperopt import hp, fmin, tpe
+import pickle
 
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
@@ -95,15 +96,7 @@ def plot_results(y_test, y_pred, save_path):
 
 
 def objective(params, cars, target_column):
-    num_word_cols = int(params["num_word_cols"])
-    tfidf_cols = [col for col in cars.columns if col.startswith("tfidf_")]
-    selected_tfidf_cols = tfidf_cols[:num_word_cols]
-
-    selected_features = selected_tfidf_cols + [
-        col
-        for col in cars.columns
-        if col not in selected_tfidf_cols and col != target_column
-    ]
+    selected_features = [col for col in cars.columns if col != target_column]
 
     X = cars[selected_features]
     y = cars[target_column]
@@ -134,9 +127,8 @@ def objective(params, cars, target_column):
 def train_fit_score_light_gbm(input_path: str):
     cars = load_and_prepare_data(f"output/{input_path}.parquet")
 
-    # Define the search space for Hyperopt
+    # Define the search space for Hyperopt (without num_word_cols)
     space = {
-        "num_word_cols": hp.quniform("num_word_cols", 50, 500, 25),
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
         "max_depth": hp.quniform("max_depth", 4, 10, 1),
     }
@@ -148,14 +140,7 @@ def train_fit_score_light_gbm(input_path: str):
         max_evals=10,
     )
 
-    best_num_word_cols = int(best_params["num_word_cols"])
-
-    tfidf_cols = [col for col in cars.columns if col.startswith("tfidf_")]
-    selected_tfidf_cols = tfidf_cols[:best_num_word_cols]
-
-    selected_features = selected_tfidf_cols + [
-        col for col in cars.columns if col not in selected_tfidf_cols
-    ]
+    selected_features = [col for col in cars.columns]
 
     X_train, X_test, y_train, y_test = split_data(cars[selected_features], "price")
 
@@ -164,14 +149,12 @@ def train_fit_score_light_gbm(input_path: str):
         "objective": "regression",
         "metric": "mean_squared_error",
         "boosting_type": "gbdt",
-        "min_data_in_leaf": 1000,
+        "min_data_in_leaf": 5000,
         "learning_rate": best_params["learning_rate"],
         "max_depth": int(best_params["max_depth"]),
         "verbose": -1,
     }
 
-    tfidf_columns = [col for col in X_train.columns if col.startswith("tfidf_")]
-    print(f"Count of columns that start with 'tfidf_': {len(tfidf_columns)}")
     model, y_pred, evals_result = train_lightgbm(
         X_train, X_test, y_train, y_test, final_params
     )
@@ -179,14 +162,10 @@ def train_fit_score_light_gbm(input_path: str):
     evaluate_model(y_test, y_pred)
 
     model_name = "LightGBM"
-    if X_train.columns.str.startswith("tfidf").any():
-        model_name += "_with_words"
     model_name += "/"
 
     plot_results(y_test, y_pred, model_name)
     plot_rmse_over_rounds(evals_result, model_name)
-
-    import pickle
 
     with open(f"{model_name}/best_lightgbm_model.pkl", "wb") as file:
         pickle.dump(model, file)
