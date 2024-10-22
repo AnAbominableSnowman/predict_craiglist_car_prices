@@ -52,7 +52,7 @@ def train_lightgbm(
         valid_sets=[train_data, test_data],
         valid_names=["training", "validation"],
         callbacks=[
-            lgb.early_stopping(stopping_rounds=10),
+            lgb.early_stopping(stopping_rounds=10, min_delta=10.0),
             lgb.record_evaluation(evals_result),
         ],
     )
@@ -119,7 +119,7 @@ def objective(params, cars, target_column):
         "boosting_type": "gbdt",
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
-        "min_data_in_leaf": 1000,  # Fixed value
+        "min_data_in_leaf": 5000,  # Fixed value
         "verbose": -1,
     }
 

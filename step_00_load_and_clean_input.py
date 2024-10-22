@@ -22,7 +22,7 @@ def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFram
 
 def clean_cylinders_column(cars: pl.DataFrame) -> pl.DataFrame:
     cars = cars.with_columns(
-        pl.when(pl.col("cylinders").str.replace_all(r"\D", "") != "")
+        pl.when(pl.col("cylinders").is_not_null() & (pl.col("cylinders") != ""))
         .then(pl.col("cylinders").str.replace_all(r"\D", ""))
         .otherwise(None)
         .alias("cylinders")
@@ -37,8 +37,13 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
 
 
 def detect_if_description_exists(cars: pl.DataFrame) -> pl.DataFrame:
+    if "description" not in cars.columns:
+        raise ValueError("The column 'description' does not exist in the DataFrame.")
+
     cars = cars.with_columns(
-        (pl.col("description").is_not_null()).alias("description_exists")
+        (pl.col("description").is_not_null() & (pl.col("description") != "")).alias(
+            "description_exists"
+        )
     )
     return cars
 

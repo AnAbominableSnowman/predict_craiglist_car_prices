@@ -2,12 +2,13 @@ from step_00_load_and_clean_input import (
     unzip_and_load_csv,
     drop_unnecessary_columns,
     detect_if_carvana_ad,
-    # clean_cylinders_column,
+    clean_cylinders_column,
     switch_condition_to_ordinal,
     drop_out_impossible_values,
     fill_missing_values_column_level,
     delete_description_if_caravana,
     remove_duplicate_rows,
+    detect_if_description_exists,
 )
 from step_01_feature_engineering import (
     remove_punc_short_words_lower_case,
@@ -31,13 +32,14 @@ cars = drop_unnecessary_columns(cars)
 # affected the data.
 cars.write_parquet("output/raw_input.parquet")
 
+cars = detect_if_description_exists(cars)
 # # ## about %10 of data are carvana ads
 cars = detect_if_carvana_ad(cars)
 cars = delete_description_if_caravana(cars)
-# cars = detect_if_description_exists(cars)
+
 
 # # # cylinders can be ints but aren't so I clean them to int.
-# cars = clean_cylinders_column(cars)
+cars = clean_cylinders_column(cars)
 # # condition has a natural ranking so I encode that. IE. like new is better then fair
 cars = switch_condition_to_ordinal(cars)
 
