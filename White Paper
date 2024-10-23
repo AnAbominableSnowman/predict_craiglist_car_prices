@@ -116,14 +116,13 @@ Categorical variables are a bit harder to use in SHAP summary plots as they lack
 
 
 ### 4. Light GBM with HyperOpt and Words
+From here, a kaleidoscope of options awaits: hyperparameter tuning, adding text data from the description, utilizing latitude and longitude to pull in zip code data, implementing cross-validation, and exploring the time and date of posting.
 
-From here, there is a kaledoscope of options to try next: hyper parameter tuning, add it text data from the description, utilize lat and long to pull in zip code data, implementing crossvalidation, explore the time and date of posting. 
+The first step was addressing overfitting, and while doing so, I set up HyperOpt. HyperOpt is one of my favorite tools for hyperparameter optimization. It uses a Bayesian framework to search more efficiently by using prior runs to inform future ones. An analogy: you are looking for a plane that flew between New York and London and crashed in the ocean. If you find debris, you should concentrate all your searchers in that spot to thoroughly comb the area.
 
-The first stop was addressing overfit and while here, I might as well set up HyperOpt. HyperOpt is one of my favorite tools for hyperparameter optimization. It uses a Bayesian framework to more efficeintly search using prior runs to inform future runs. An analogy, You are looking for a plane that flew between New York and London and crashed in the ocean. If you find debries, you should bring all your searchers in to that one spot and really comb that location.
+I focused on optimizing three main hyperparameters: learning rate, maximum depth, the number of TF-IDF words, and L1 and L2 regularization. I did not tune the number of leaves, as I fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html).Because LightGBM grows leaf-first rather than level-first, fitting the maximum depth and setting the number of leaves to match it essentially mimics a level-first methodology similar to that of Random Forest. This approach is acceptable if overfitting is not an issue; however, since we are facing overfitting, we are opting for a different strategy.
 
-There are three main hyperparemeters I tried to optimize; learning rate, max depth, number of TF_IDF words and L1, L2 regularization. We are not tuning on number of leaves.I have fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html). Because Light GBM grows leaf first, not level first. By fitting max depth and setting leaves to be equal to it, you just back yourself in a level first methodology ala random forest. This is okay if you don't have over fit, but we do, so were doing it like this instead. 
-
-Number of TF_IDF was always selected to be max at 500, so the existing code doesn't show this as checking this was wasting compute. Trying both L1 and L2 regualarization at the same time is inspired by ElasticNet; this idea was inspired by [StackExchange](https://datascience.stackexchange.com/questions/57255/l1-l2-regularization-in-light-gbm).
+The maximum number of TF-IDF features is set to 500, ie, the max, after several rounds of HyperOpt all pointed to that being optimal. Additionally, simultaneously applying both L1 and L2 regularization is inspired by ElasticNet, which combines the strengths of both regularization techniques to enhance model performance. This idea was inspired by [StackExchange](https://datascience.stackexchange.com/questions/57255/l1-l2-regularization-in-light-gbm).
 
 Interpting TF_IDF, TO DO DEVIN
 
@@ -138,16 +137,25 @@ FIX UP ALT image titles
 
 
 ### Compare the given models.
+Comparing the models, linear regression offers interpretability and statistical inference. However, given that none of the underlying assumptions hold and the presence of high correlation among features, its interpretative value diminishes. Therefore, LightGBM emerges as a more suitable model for this use case.
 
-Comparing the models, Linear regression should offer interptability and statistical infrence. But without any of the assumptions holding and high correlation, that doesn't really hold. As such, I think Light GBM is just a better model for this use case. The next questions becomes, do you want to use the model with TF_IDF and feature engineering or the base model. The more complex model, four, is about five times slower to train. But in my envisioned use case, it only trains at most once a week. So model training speed isn't super important. Prediction speed is perhaps a bit more important as you want to be scraping data, and predicting on the data daily if not hourly so you can know about the deals asap!
+The next question is whether to use the model with TF-IDF and feature engineering or the base model. The more complex model (Model 4) takes about five times longer to train, but since it is intended to be trained only once a week, training speed is not a critical concern. Prediction speed is more important, as you will want to scrape data and generate predictions daily, if not hourly, to capitalize on deals promptly.
 
-I think the ideal end case is using model four and using a model in combination with SHAP to create a waterfall plot and see how and why the lightGBM model is adjusting the price how it is. From there, you can use subject matter expertise, to agree with, tweak or ignore each prediction. Heres an example from the model we trained.  TO DO DEVIN FILL IN T
-
+Ultimately, I envision using Model 4 alongside SHAP to create a waterfall plot that illustrates how the LightGBM model adjusts prices. This approach allows you to leverage subject matter expertise to validate, adjust, or disregard each prediction. Here’s an example from the model we trained:
+TO DO: DEVIN, PLEASE FILL IN THE DETAILS
 
 ## Conclusion and Future Work
-In conclusion, we found a featured engineered model with text in Light GBM to be the best model. We were able to get an RMSE OF XYZ and epxlaine about UFUF% of the variance in price. The most important variables were odometer, region and year along with word XSSS,SSSD,KKKD,DDDD, TO DO DEVIN. THis current approach has limitiations, it is limited to the time frame the data was scraped (early 2024) and we cut about 15% of the totals rows due to impossible odometers and prices. These were corrupt at random and its hard to say how this changes the model and our depiction of it. Finally, Carvana is a bit player in the market, but given how fractured the craigslist market it, they are by far the ]biggest player. They very well might set the market and more fcuse should be given to their pricign. 
+In conclusion, we determined that a feature-engineered model using LightGBM, which incorporates text data, is the best approach. We achieved an RMSE of XYZ and were able to explain approximately UFUF% of the variance in price. The most significant variables influencing predictions were odometer reading, region, year, and keywords XSSS, SSSD, KKKD, and DDDD. TO DO: DEVIN, PLEASE FILL IN THE DETAILS.
+
+However, this approach has limitations. It is restricted to the data timeframe (early 2024), and we excluded about 15% of the total rows due to implausible odometer readings and prices. These corrupt data points were randomly distributed, making it difficult to assess their impact on the model and our interpretations.
+
+Finally, while Carvana is a relatively minor player in the overall market, it is the largest within the fragmented Craigslist marketplace. Their pricing strategies could significantly influence market dynamics, and more attention should be directed toward their pricing practices.
 
 ## Future work
-Pull out useful info from  craigslist carvana ad's. Today there is too much static data in the descriptions that overwhelems TF_IDF, so I turn carvana ad's into a boolean varialbe. A further analysis could just delete the boiler plate and extract the nuggets.
+### 1. Renovate Craigslist Ad Descriptions
+Pull out useful info from Craigslist Carvana ad's and delete the boiler plate. Today there is too much static data in the descriptions that overwhelems TF_IDF, so I turn Carvana ad's into a boolean varialbe. A further analysis could just delete the boiler plate and extract the nuggets of informations.
 
-Find and utilzie the images. The current data only points to image URLs; I could go an download all these images and then utilize them. Thats beyond the scope of this project today. But from here, you could build a CVML model to detect car quality. Specifically looking for things like rust, dents, and scratches. I know this is possible and have worekd on it before but can't share more without spilling the secret sauce. 
+
+### 2. Download Images and build a CVML model
+The dataset currently includes only image URLs. Although downloading all images and utilizing them is beyond the current project's scope, there is significant potential for future exploration. By implementing a computer vision machine learning (CVML) model, we could analyze these images to assess car quality, specifically looking for indicators such as rust, dents, and scratches. While I have experience in this area, I must keep the secret sauce secret.
+
