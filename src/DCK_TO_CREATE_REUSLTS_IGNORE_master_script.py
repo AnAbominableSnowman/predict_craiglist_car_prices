@@ -17,7 +17,7 @@
 # # from step_02_visualization import generate_profiling_report
 # from numpy import log
 from step_05_shap_analysis import (
-    # save_shap_to_json,
+    save_shap_to_json,
     plot_shap_dependence_for_categoricals,
 )
 # # # pull in and unzip the zip from kaggle
@@ -207,12 +207,12 @@ basic_cols = [
 
 
 # # Function 1: Save SHAP values to JSON
-# save_shap_to_json(
-#     model_path=model_path,
-#     data_path=data_path,
-#     output_dir=output_dir,
-#     col_subset=basic_cols,
-# )
+save_shap_to_json(
+    model_path=model_path,
+    data_path=data_path,
+    output_dir=output_dir,
+    col_subset=basic_cols,
+)
 
 # Function 2: Plot SHAP dependence plots for categorical variables
 plot_shap_dependence_for_categoricals(
