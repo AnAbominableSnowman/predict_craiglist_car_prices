@@ -13,23 +13,26 @@
 10. [References](#references)
 
 ## Introduction
-Growing up, a family friend was always pouring over Craiglist ad's, buying cars, fixing them and then flipping them. But each flip took him atleast forty hours of searching; I can still picture him in the dim light of the cathode ray tubes with booklets stacked around him. 
+**Growing up, I had a family friend who was always poring over Craigslist ads, buying cars, fixing them up, and flipping them for profit. Each flip took him at least forty hours of searching. I can still picture him, bathed in the dim glow of a cathode ray tube, surrounded by stacks of booklets.**
 
-This project is an ode to that family friend and tries to build a tool to predict Craiglist car prices. Similiar to the tools Kelly Blue Book and Captive Financials, like Ford Financing, would build and use. For our anonymous hero, she might use the tool to efficiently find underpriced offers and snatch them up before others do. To take it a step further, you could even create a synthetic set of one thousand vehicles. Train the model month to month, and then see how the prices on your synthetic, static vehicles change. This could give you insight into market movements. 
+This project is an ode to that family friend. It aims to build a tool to predict Craigslist car prices—similar to the tools used by Kelley Blue Book and captive financial companies like Ford Financing. Our anonymous hero could use this tool to efficiently find underpriced offers and snatch them up before others do.
+
+Taking it a step further, our hero could even create a synthetic dataset of a thousand representative vehicles, train the model month by month, and observe how the prices of your synthetic vehicles change over time. Knowing the test data was fixed, any changes in price are attributable to changes in the trained model. This could be used as an index providing valuable insights into market trends and movements.
 
 
 ## Problem Definition
 
-Someone has generously scraped 450k car postings off Craiglist and posted them on Kaggle. I have downloaded this zipped csv and our story begins here. The target variable, price, is in USD. We have eighteen useful covariates here including, a text description of the car, the paint color, the title status, odometer readings and the lat,long of the vehicle amoung others. 
+A generous contributor has scraped 450,000 car postings from Craigslist and shared them on [Kaggle](https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data/code). I have downloaded the zipped CSV file, and this is where our analysis begins. The target variable is the price, represented in USD. The dataset includes eighteen useful covariates, such as a region, a metro area, price in USD, year, year of manufacture, manufacturer (e.g., Ram or Jeep), model (e.g., Silverado or Forester), condition (e.g., good or fair), cylinders (e.g., 4 or 6), fuel (e.g., diesel or gas), odometer (miles traveled), title status (e.g., rebuilt or clean), transmission (e.g., automatic or manual), drive (e.g., FWD or RWD), type (e.g., sedan or truck), paint color (e.g., white or black), state (e.g., Wisconsin), and lat(itude) and long(itude) (representing geographical location).
 
 ## Exploratory Data Analysis (EDA)
 
 ### 1. Data Overview
-For a thorough EDA using y_data_profiling, see the data [pre_proccessing](results/data_profile_cleaned_subsampled_to_one_percent), and [post processing](results/data_profile_raw_subsampled_to_one_percent). In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues. We will adress this in [data preprocessing](#data-preprocessing). Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
+For a thorough EDA using `y_data_profiling`, see the visualizations from [pre_proccessing](results/data_profile_cleaned_subsampled_to_one_percent) and [post processing](results/data_profile_raw_subsampled_to_one_percent). In the interest of space, I will mention the most pertinent details. The price variable is heavily right-skewed, as is the odometer reading, which contains some incredible values of 10 million or more—equivalent to twenty round trips to the moon. It’s safe to say there are some data quality issues, which we will address in [data preprocessing](#data-preprocessing). Another pertinent topic is the high frequency of Carvana ads at XYZ%; since they exhibit higher data quality and more consistency across ads, they form an interesting part of the puzzle. However, their descriptions are mostly identicial boilerplate across many ads. 
 
 
-Digging into interactions,cars_non_empty we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen (word frequnecy)[#feature-engineering] and odometer. Which suggests certain words are used to more or less frequently depending on car mileage; this should conform to expectations. No one describes their 2022 Sports car as reliable; that term of endearment is for the family workhorse that's been picking up groceries for a decade or more. Finally, manufacturer shows a correlation with cylinders and transimiison type which again confroms to common sense. FInally, about eleven percent of the rows appear to be exact duplicates. They could be truly differnt cars but to match, price and odometer, color, etc exactly strains belief so we need to investiage. 
+Digging into interactions below, we see a three-way interaction among price, age, and odometer reading. Older vehicles typically have more miles and are worth less; untangling mileage from age is a complex problem that is be beyond the scope of this paper. We also notice interactions between (word frequnecy)[#feature-engineering] and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. No one describes their brand new sports car as "reliable"; that term of endearment is typically reserved for the family workhorse van that has been picking up groceries for a decade or more. Note, for clarity sake, the plot below only shows a few of the many, many tf_idf word columns. 
 
+Finally, the manufacturer shows a correlation with both the number of cylinders and transmission type, which again conforms to common sense. Additionally, about eleven percent of the rows appear to be exact duplicates. While they could represent truly different cars, the exact matching of price, odometer, color, etc., strains credibility, so we will drop these results. Likely people are reposting the same ad to make their ad appear new. 
 
 PROBLEM: ADD num words as variable
 
@@ -96,7 +99,7 @@ Addressing interptability is a bit harder, but for this, I will use [SHAP](https
 
 <div style="display: flex; gap: 40px;">
     <img src="results\light_gbm_basic/shap_summary_plot.png" alt="Image 1">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results\light_gbm_basic\rmse_over_rounds.png" alt="Image 2">
 </div>
 
 
@@ -116,8 +119,8 @@ Interpting TF_IDF, TO DO DEVIN
 
 
 <div style="display: flex; gap: 40px;">
-    <img src="results/light_gbm__hyperopt_and_feature_engineering/predicted_vs_actual.png" alt="Image 1">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" alt="Image 1">
+    <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" alt="Image 2">
 </div>
 
 FIX UP ALT image titles

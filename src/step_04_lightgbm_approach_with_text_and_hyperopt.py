@@ -157,7 +157,7 @@ def train_fit_score_light_gbm(
             fn=lambda params: objective(params, cars, "price"),
             space=space,
             algo=tpe.suggest,
-            max_evals=1,
+            max_evals=20,
         )
         # Convert float depth to int
         best_params["max_depth"] = int(best_params["max_depth"])
@@ -186,7 +186,6 @@ def train_fit_score_light_gbm(
     model, y_pred, evals_result = train_lightgbm(
         X_train, X_test, y_train, y_test, final_params
     )
-    lgb.plot_metric(evals_result)
     model_name = model_name + "/"
 
     if output_path is not None:
