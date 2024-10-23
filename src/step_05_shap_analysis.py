@@ -70,11 +70,10 @@ def plot_shap_dependence_for_categoricals(
         shap_values = np.array(json.load(f))
 
     data = load_data(data_path, col_subset)
-    X = data
 
     # Plot SHAP summary plot
     print("Creating SHAP summary plot...")
-    shap.summary_plot(shap_values, X, show=False)
+    shap.summary_plot(shap_values, data, show=False)
     plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
     plt.close()
 
@@ -83,6 +82,6 @@ def plot_shap_dependence_for_categoricals(
 
     for cat_col in categorical_columns:
         print(f"Creating SHAP dependence plot for {cat_col}...")
-        shap.dependence_plot(cat_col, shap_values, X, show=False)
+        shap.dependence_plot(cat_col, shap_values, data, show=False)
         plt.savefig(os.path.join(output_dir, f"shap_dependence_{cat_col}.png"))
         plt.close()
