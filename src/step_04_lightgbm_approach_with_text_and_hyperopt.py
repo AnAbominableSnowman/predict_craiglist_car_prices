@@ -87,15 +87,6 @@ def evaluate_model(y_test, y_pred, model_path):
 
 
 def plot_results(y_test, y_pred, save_path):
-    plt.figure(figsize=(10, 5))
-    plt.subplot(1, 2, 1)
-    plt.scatter(y_test, y_pred, edgecolor="k", alpha=0.4)
-    plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--", lw=2)
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
-    plt.title("Predicted vs Actual")
-
-    plt.subplot(1, 2, 2)
     residuals = y_test - y_pred
     plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.4)
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
@@ -125,7 +116,6 @@ def objective(params, cars, target_column):
     lightgbm_params = {
         "objective": "regression",
         "metric": "root_mean_squared_error",
-        "boosting_type": params["boosting_type"],
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
         "min_data_in_leaf": 2000,  # Fixed value
@@ -157,7 +147,6 @@ def train_fit_score_light_gbm(
     space = {
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
         "max_depth": hp.quniform("max_depth", 4, 10, 1),
-        "boosting_type": hp.choice("boosting_type", ["gbdt"]),
         "lambda_l1": hp.uniform("lambda_l1", 0.0, 3.0),  # L1 regularization
         "lambda_l2": hp.uniform("lambda_l2", 0.0, 3.0),  # L2 regularization
     }
@@ -168,7 +157,7 @@ def train_fit_score_light_gbm(
             fn=lambda params: objective(params, cars, "price"),
             space=space,
             algo=tpe.suggest,
-            max_evals=20,
+            max_evals=1,
         )
         # Convert float depth to int
         best_params["max_depth"] = int(best_params["max_depth"])
@@ -185,7 +174,6 @@ def train_fit_score_light_gbm(
     final_params = {
         "objective": "regression",
         "metric": "root_mean_squared_error",
-        "boosting_type": best_params["boosting_type"],  # Convert index to boosting type
         "min_data_in_leaf": 2000,
         "learning_rate": best_params["learning_rate"],
         "max_depth": best_params["max_depth"],
