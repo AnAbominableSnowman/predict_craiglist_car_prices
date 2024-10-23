@@ -186,7 +186,6 @@ def train_fit_score_light_gbm(
     model, y_pred, evals_result = train_lightgbm(
         X_train, X_test, y_train, y_test, final_params
     )
-    lgb.plot_metric(evals_result)
     model_name = model_name + "/"
 
     if output_path is not None:
