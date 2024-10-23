@@ -1,24 +1,24 @@
-# from step_00_load_and_clean_input import (
-#     unzip_and_load_csv,
-#     drop_unnecessary_columns,
-#     detect_if_carvana_ad,
-#     switch_condition_to_ordinal,
-#     drop_out_impossible_values,
-#     fill_missing_values_column_level,
-#     delete_description_if_caravana,
-#     remove_duplicate_rows,
-#     detect_if_description_exists,
-# )
+from step_00_load_and_clean_input import (
+    unzip_and_load_csv,
+    #     drop_unnecessary_columns,
+    detect_if_carvana_ad,
+    #     switch_condition_to_ordinal,
+    #     drop_out_impossible_values,
+    #     fill_missing_values_column_level,
+    #     delete_description_if_caravana,
+    #     remove_duplicate_rows,
+    #     detect_if_description_exists,
+)
 # from step_01_feature_engineering import (
 #     replace_rare_and_null_manufacturer,
 # )
 # from step_03_linear_regression_approach import train_fit_score_linear_regression
-from step_04_lightgbm_approach_with_text_and_hyperopt import train_fit_score_light_gbm
+# from step_04_lightgbm_approach_with_text_and_hyperopt import train_fit_score_light_gbm
 
 # # from step_02_visualization import generate_profiling_report
 # from numpy import log
 # # # pull in and unzip the zip from kaggle
-# cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
+cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
 
 # # these are mostly non informative columns like URL, or constant values, or columns that
 # # the author mentioned were corrupted.
@@ -37,7 +37,13 @@ from step_04_lightgbm_approach_with_text_and_hyperopt import train_fit_score_lig
 # # create
 # cars = detect_if_description_exists(cars)
 # # # ## about %10 of data are carvana ads
-# cars = detect_if_carvana_ad(cars)
+cars = detect_if_carvana_ad(cars)
+import polars as pl
+
+print(cars.filter(pl.col("carvana_ad")).height)
+
+print(cars.height)
+
 # cars = delete_description_if_caravana(cars)
 
 # # # condition has a natural ranking so I encode that. IE. like new is better then fair
@@ -114,68 +120,68 @@ from step_04_lightgbm_approach_with_text_and_hyperopt import train_fit_score_lig
 # cars.write_parquet("intermediate_data/cleaned_edited_feature_engineered_input.parquet")
 
 
-lightgbm_params = {
-    "objective": "regression",
-    "metric": "root_mean_squared_error",
-    "boosting_type": "gbdt",
-    "learning_rate": 0.1,
-    "max_depth": 6,
-    "verbose": -1,
-    "lambda_l1": 0,  # Include L1 regularization
-    "lambda_l2": 0,
-}
-
-
-basic_cols = [
-    "region",
-    "price",
-    "year",
-    "model",
-    "condition",
-    "cylinders",
-    "fuel",
-    "odometer",
-    "title_status",
-    "transmission",
-    "drive",
-    "type",
-    "paint_color",
-    "state",
-    "lat",
-    "long",
-    "manufacturer",
-]
-print("start fitting Light GBM")
-
-train_fit_score_light_gbm(
-    input_path="cleaned_edited_feature_engineered_input",
-    params=lightgbm_params,
-    output_path="results/light_gbm_basic/",
-    col_subset=basic_cols,
-)
-
 # lightgbm_params = {
 #     "objective": "regression",
 #     "metric": "root_mean_squared_error",
 #     "boosting_type": "gbdt",
-#     "learning_rate": 0.05032013271321068,
-#     "max_depth": 8,
-#     "min_data_in_leaf": 5000,  # Fixed value
+#     "learning_rate": 0.1,
+#     "max_depth": 6,
 #     "verbose": -1,
+#     "lambda_l1": 0,  # Include L1 regularization
+#     "lambda_l2": 0,
 # }
 
-# Calculate num_leaves based on max_depth
-# lightgbm_params["num_leaves"] = int(2 ** lightgbm_params["max_depth"] * 0.65)
+
+# basic_cols = [
+#     "region",
+#     "price",
+#     "year",
+#     "model",
+#     "condition",
+#     "cylinders",
+#     "fuel",
+#     "odometer",
+#     "title_status",
+#     "transmission",
+#     "drive",
+#     "type",
+#     "paint_color",
+#     "state",
+#     "lat",
+#     "long",
+#     "manufacturer",
+# ]
+# print("start fitting Light GBM")
+
+# train_fit_score_light_gbm(
+#     input_path="cleaned_edited_feature_engineered_input",
+#     params=lightgbm_params,
+#     output_path="results/light_gbm_basic/",
+#     col_subset=basic_cols,
+# )
+
+# # lightgbm_params = {
+# #     "objective": "regression",
+# #     "metric": "root_mean_squared_error",
+# #     "boosting_type": "gbdt",
+# #     "learning_rate": 0.05032013271321068,
+# #     "max_depth": 8,
+# #     "min_data_in_leaf": 5000,  # Fixed value
+# #     "verbose": -1,
+# # }
+
+# # Calculate num_leaves based on max_depth
+# # lightgbm_params["num_leaves"] = int(2 ** lightgbm_params["max_depth"] * 0.65)
 
 
-print("start fitting Light GBM")
-# train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-train_fit_score_light_gbm(
-    input_path="cleaned_edited_feature_engineered_input",
-    params=None,
-    output_path="results/light_gbm__hyperopt_and_feature_engineering/",
-    col_subset=None,
-)
+# print("start fitting Light GBM")
+# # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
+# train_fit_score_light_gbm(
+#     input_path="cleaned_edited_feature_engineered_input",
+#     params=None,
+#     output_path="results/light_gbm__hyperopt_and_feature_engineering/",
+#     col_subset=None,
+# )
 
 
 # model_path = (
