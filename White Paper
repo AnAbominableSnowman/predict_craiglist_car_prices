@@ -96,7 +96,7 @@ Addressing interptability is a bit harder, but for this, I will use [SHAP](https
 
 <div style="display: flex; gap: 40px;">
     <img src="results\light_gbm_basic/shap_summary_plot.png" alt="Image 1">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results\light_gbm_basic\rmse_over_rounds.png" alt="Image 2">
 </div>
 
 
@@ -116,8 +116,8 @@ Interpting TF_IDF, TO DO DEVIN
 
 
 <div style="display: flex; gap: 40px;">
-    <img src="results/light_gbm__hyperopt_and_feature_engineering/predicted_vs_actual.png" alt="Image 1">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" alt="Image 1">
+    <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" alt="Image 2">
 </div>
 
 FIX UP ALT image titles
