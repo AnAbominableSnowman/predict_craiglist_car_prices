@@ -69,6 +69,20 @@ def plot_results(y_test: ndarray, y_pred: ndarray, log: bool, directory) -> None
     plt.tight_layout()
 
     plt.savefig(f"{directory}/predicted_vs_actual.png")  # Save Predicted vs Actual plot
+    plt.figure(figsize=(5, 5))
+
+    # Residuals plot
+    residuals = y_test - y_pred
+    plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.7)
+    plt.axhline(y=0, color="r", linestyle="--", lw=2)
+    plt.xlabel("Predicted")
+    plt.ylabel("Residuals")
+    plt.title("Residuals Plot")
+
+    plt.tight_layout()
+
+    # Save the residuals plot
+    plt.savefig(f"{directory}/residuals.png")
 
 
 def print_results(y_test: ndarray, y_pred: ndarray, model, directory) -> None:

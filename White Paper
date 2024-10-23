@@ -60,40 +60,64 @@ I choose a train, valid, test split of 75/20/5.
 
 
 ## Modeling
-### 1. Model Selection
-I iterated through four models in this project progressively improving. My first model was the first stop on almost any good regression data science project, linear regression. The first attempt to get a good baseline was oridanry least squares regression with Odometer as my covariate. The good news is that model trains incredibly quickly and it is the most interptable of all models. I got a final RMSE of XYZ and an R^2 of DDD. So the models off bya bout XYZ dollars on average and odometer explains about DDD % of the total variation in price. The models extreme interptablity is also nice; any car's value starts at UBK and every consectutive mile reduces value by POI cents. In the interest of brevity, I won't dive too deeply into checking the assumptions because they are bad. Linearity, homoskedascity, normality, all fail and with it, any ability to interpt the model. So if you have an uninterptable and innaccurate model, its time to go back to the drawing board. 
 
-| Model                             | Vars               | Hyper Params                           | RMSE       | R²        |
+| Model                             | Explanatory Variables            | Hyper Parameters                           | RMSE       | R²        |
 |-----------------------------------|--------------------|------------------------------|------------|-----------|
 | Ordinary Least Squares            | odometer       | `None`                                 | $12110     | 29.2%    |
 | Log Least Squares                 | year, manufacturer, odometer, paint_color, state, title_status| `None`                                 | $10,986     | 41.8%    |
 | LightGBM                          | all standard variables      | `{'learning_rate': 0.01, 'max_depth': 6,'boosting_type': "gbdt"` | $6180    | 81.7%   |
 | LightGBM with Hyperopt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $4998 | 88%    |
 
+*Table 1* The four modeling approaches
 
-Next model, I wanted to tackle two problems; many negative price predictions and decrease bias at the cost of variance. To do this, I started by logging price. The intuition behind this is that it price spans several magnitudes and predicting the log will never be negative. The second prong, decreasing bias, was achieved by introducing a few extra terms to the model: year, manufacturer, state, title_status and paint_color. I selected these variables because they had low cardinality, lived experience/common sense and low rates of missing values. Variables with a lot of missing values would require a lot of mean/mode imputation reducing the value of the variable. Variables with high cardinality redcue model interptablity and risk dicing up data too thinly. 
 
-Linear regression isn't going to cut it on this data set so I'll try another tool, Light GBM. Let's try a naive approach first, using all of our useable varialbes and leaving out any words or feature engineered variables or hyper parameter tuning. Consider it more of a base line approach. 
+### 1. Simple Ordinary Least Squares
+I iterated through four models in this project progressively improving. To asses model quality, I will use RMSE, and R^2 while also favoring simpler models with equivalent succes.  My first model was the first stop on almost any good regression data science project, linear regression. My  baseline was oridanry least squares regression with Odometer as my covariate. The good news is that model trains incredibly quickly and it is the most interptable of all models. I got a final RMSE of $12k and an R^2 of 29%. So the models off by about 12,000 dollars on average; this isn't good enough for our use case. While the model, odometer, explains about 29% of the total variation in price. The models extreme interptablity is also nice; any car's value starts at $31,140 and every consectutive mile reduces value by 12.75 cents. In the interest of brevity, I won't dive too deeply into checking the assumptions because they all fail: linearity, homoskedascity, normality, all fail. While many types of inference are robust, this is too much for even the most robust linear regression infrences. So left with an uninterptable and innaccurate model, its time to go back to the drawing board. Another problem is the negative predictions; after 250,000 miles, the model starts predicting negative prices. 
+<div style="display: flex; gap: 40px;">
+    <img src="results/Simple Linear Regression of Price by Odometer/residuals.png" alt="Image 1">
+    <img src="results/Simple Linear Regression of Price by Odometer/ols_results.png" alt="Image 2">
+</div>
+_*Figure 1*_ Results of the simple least squares regression, note how many predictions are actually negative.  
 
+
+### 2. Log Multiple Least Squares
+In my next model, I wanted to tackle two problems; many negative price predictions and decrease bias at the cost of increasing variance. To do this, I started by logging price. The intuition behind this is that it price spans several magnitudes and predicting the log will never be negative. The second prong, dealing with an underfitting model, was achieved by introducing a few extra terms to the model: year, manufacturer, state, title_status and paint_color. I selected these variables because they had low cardinality, lived experience/common sense and low rates of missing values. Variables with a lot of missing values would require a lot of mean/mode imputation reducing the value of the variable. Variables with high cardinality reduce model interptablity and risk dicing up data too thinly. 
+
+Checking the results below, the negative predictions have dissappeared and we are seeing an improvement in model accuracy, with about 40% of the variability in price explained by our model. In addition, we are on average off by about $1k less, $11k. While thats a great step in the right direction of accuracy, we now have 80 seperate terms in the function. In addition, we now have correlated covariates that are skewing our beta coefficents and very strange results such as cars in West Virginia being more expensive then New York.
+<div style="display: flex; gap: 40px;">
+    <img src="results/Log price Linear Regression/residuals.png" alt="Image 1">
+    <img src="results/Log price Linear Regression/Log_mls_results.png" alt="Image 2">
+</div>
+_*Figure 12*_ Results of the log mulitiple least squares regression, note I cut off many rows in the results for brevity. Full results can be found in GH. 
+
+### 3.Light GBM
+Linear regression isn't going to cut it on this data set so I'll try another tool, Light GBM. Let's try a naive approach first, using all of our useable varialbes and leaving out any words or feature engineered variables or hyper parameter tuning. Consider it more of a base line approach. The great news is it provided a dramatic improvement in our model preformance.  Our RMSE dropped down to $6,200 and our model is able to explain about 82% of the variation in price. This a dramatic improvement in accuracy but costed us a bit of speed and explainability. Specifically the model went from about 10 seconds to fit model two mentioned above, to about four minutes to fit model three. As this is a model that would likey be trained once a week at most, this is a fine trade off to me.  
+
+Addressing interptability is a bit harder, but for this, I will use [SHAP](https://shap.readthedocs.io/en/latest/index.html) to better understand how specific variable affect the predictions.
+
+
+<div style="display: flex; gap: 40px;">
+    <img src="results/light_gbm_basic/predicted_vs_actual.png" alt="Image 1">
+    <img src="results\light_gbm__hyperopt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+</div>
 
 
 From here, there is a kaledoscope of options to try next: hyper parameter tuning, add it text data from the description, utilize lat and long to pull in zip code data, implementing crossvalidation, explore the time and date of posting. 
 
 The first stop was addressing overfit and while here, I might as well set up hyper opt. Hyperopt is one of my favorite tools for hyper optimization. It uses a bayesian framework to more efficeintly search using prior runs to inform future runs. An analogy, You are looking for a plane that flew between New York and London and crashed in the ocean. If you find debries, you should bring all your searchers in to that one spot and really comb that location.
-
+### 4. Light GBM with Hyperopt and Words
 There are three main hyperparemeters I tried to optimize; learning rate, max depth and number of TF_IDF words. We are not tuning on number of leaves.I have fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html)
  Because Light GBM grows leaf first, not level first. By fitting max depth and setting leaves to be equal to it, you just back yourself in a level first methodology ala random forest. This is okay if you don't have over fit, but we do, so were doing it like this instead. 
 
 
 <div style="display: flex; gap: 40px;">
-    <img src="LightGBM_with_words/predicted_vs_actual_og_model.png" alt="Image 1">
-    <!-- <img src="LightGBM_with_words/shap_summary_plot_og_model.png" alt="Image 2"> -->
+    <img src="results/light_gbm_basic/predicted_vs_actual.png" alt="Image 1">
+    <img src="results\light_gbm__hyperopt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
 </div>
 
-PROBLEM: ASK BRAD HOW HE PICKS MODEL ONE SD BEFORE BEST ITERATION.
-### 2. Model Training
-- Details on how the models were trained
-- Hyperparameter tuning (e.g., GridSearch, RandomSearch)
+FIX UP ALT image titles
+
+
 
 ## Model Evaluation
 - Performance metrics used (e.g., R-squared, RMSE, MAE)

@@ -1,9 +1,9 @@
 from __future__ import annotations
 import lightgbm as lgb
 import pandas as pd
-from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, root_mean_squared_error
+from sklearn import train_test_split
 from numpy import ndarray
 import os
 from hyperopt import hp, fmin, tpe
@@ -28,7 +28,7 @@ def load_and_prepare_data(filepath: str) -> pd.DataFrame:
 def split_data(cars: pd.DataFrame, target_column: str):
     y = cars.pop(target_column).to_numpy()
     X_train, X_test, y_train, y_test = train_test_split(
-        cars, y, test_size=0.2, random_state=42
+        cars, y, test_size=0.2, random_state=2018
     )
     return X_train, X_test, y_train, y_test
 
@@ -143,7 +143,7 @@ def objective(params, cars, target_column):
 def train_fit_score_light_gbm(
     input_path: str, params, output_path: str, col_subset: list[str]
 ):
-    cars = load_and_prepare_data(f"output/{input_path}.parquet")
+    cars = load_and_prepare_data(f"intermediate_data/{input_path}.parquet")
     if col_subset is not None:
         if "price" not in col_subset:
             col_subset.append("price")

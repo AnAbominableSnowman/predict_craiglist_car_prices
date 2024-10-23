@@ -3,4 +3,7 @@
 /cleaned_input.parquet
 /output/
 /shap_plots/
-/__pycache__/
+# /__pycache__/
+/intermediate_data/
+/to be deleted/
+**/__pycache__/
