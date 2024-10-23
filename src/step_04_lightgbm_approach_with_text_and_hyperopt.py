@@ -3,7 +3,8 @@ import lightgbm as lgb
 import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.metrics import r2_score, root_mean_squared_error
-from sklearn import train_test_split
+from sklearn.model_selection import train_test_split
+
 from numpy import ndarray
 import os
 from hyperopt import hp, fmin, tpe
@@ -56,7 +57,7 @@ def train_lightgbm(
         valid_sets=[train_data, test_data],
         valid_names=["training", "validation"],
         callbacks=[
-            lgb.early_stopping(stopping_rounds=10, min_delta=10.0),
+            lgb.early_stopping(stopping_rounds=10, min_delta=4.0),
             lgb.record_evaluation(evals_result),
         ],
     )
@@ -88,7 +89,7 @@ def evaluate_model(y_test, y_pred, model_path):
 def plot_results(y_test, y_pred, save_path):
     plt.figure(figsize=(10, 5))
     plt.subplot(1, 2, 1)
-    plt.scatter(y_test, y_pred, edgecolor="k", alpha=0.7)
+    plt.scatter(y_test, y_pred, edgecolor="k", alpha=0.4)
     plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--", lw=2)
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
@@ -96,7 +97,7 @@ def plot_results(y_test, y_pred, save_path):
 
     plt.subplot(1, 2, 2)
     residuals = y_test - y_pred
-    plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.7)
+    plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.4)
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
     plt.xlabel("Predicted")
     plt.ylabel("Residuals")
@@ -123,12 +124,14 @@ def objective(params, cars, target_column):
     # Set the parameters for LightGBM
     lightgbm_params = {
         "objective": "regression",
-        "metric": "mean_squared_error",
-        "boosting_type": "gbdt",
+        "metric": "root_mean_squared_error",
+        "boosting_type": params["boosting_type"],
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
-        "min_data_in_leaf": 5000,  # Fixed value
+        "min_data_in_leaf": 2000,  # Fixed value
         "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
+        "lambda_l1": params["lambda_l1"],  # Include L1 regularization
+        "lambda_l2": params["lambda_l2"],  # Include L2 regularization
         "verbose": -1,
     }
 
@@ -136,7 +139,7 @@ def objective(params, cars, target_column):
         X_train, X_test, y_train, y_test, lightgbm_params
     )
 
-    rmse, _ = evaluate_model(y_test, y_pred)
+    rmse = root_mean_squared_error(y_test, y_pred)
     return rmse
 
 
@@ -154,6 +157,9 @@ def train_fit_score_light_gbm(
     space = {
         "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
         "max_depth": hp.quniform("max_depth", 4, 10, 1),
+        "boosting_type": hp.choice("boosting_type", ["gbdt"]),
+        "lambda_l1": hp.uniform("lambda_l1", 0.0, 3.0),  # L1 regularization
+        "lambda_l2": hp.uniform("lambda_l2", 0.0, 3.0),  # L2 regularization
     }
 
     # If no params are passed, run the optimization using Hyperopt's fmin
@@ -162,7 +168,7 @@ def train_fit_score_light_gbm(
             fn=lambda params: objective(params, cars, "price"),
             space=space,
             algo=tpe.suggest,
-            max_evals=10,
+            max_evals=20,
         )
         # Convert float depth to int
         best_params["max_depth"] = int(best_params["max_depth"])
@@ -178,19 +184,21 @@ def train_fit_score_light_gbm(
     # Prepare params for the final model
     final_params = {
         "objective": "regression",
-        "metric": "mean_squared_error",
-        "boosting_type": "gbdt",
-        "min_data_in_leaf": 5000,
+        "metric": "root_mean_squared_error",
+        "boosting_type": best_params["boosting_type"],  # Convert index to boosting type
+        "min_data_in_leaf": 2000,
         "learning_rate": best_params["learning_rate"],
         "max_depth": best_params["max_depth"],
         "num_leaves": int(2 ** int(best_params["max_depth"]) * 0.65),
+        "lambda_l1": best_params["lambda_l1"],  # Include L1 regularization
+        "lambda_l2": best_params["lambda_l2"],  # Include L2 regularization
         "verbose": -1,
     }
 
     model, y_pred, evals_result = train_lightgbm(
         X_train, X_test, y_train, y_test, final_params
     )
-
+    lgb.plot_metric(evals_result)
     model_name = model_name + "/"
 
     if output_path is not None:
@@ -208,8 +216,9 @@ def train_fit_score_light_gbm(
 
 def plot_rmse_over_rounds(evals_result, save_path):
     plt.figure(figsize=(10, 5))
-    train_rmse = evals_result["training"]["l2"]
-    valid_rmse = evals_result["validation"]["l2"]
+    print(evals_result)
+    train_rmse = evals_result["training"]["rmse"]
+    valid_rmse = evals_result["validation"]["rmse"]
 
     plt.plot(train_rmse, label="Training RMSE", color="blue")
     plt.plot(valid_rmse, label="Validation RMSE", color="orange")

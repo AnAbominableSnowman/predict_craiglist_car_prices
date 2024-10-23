@@ -20,14 +20,15 @@ This project is an ode to that family friend and tries to build a tool to predic
 
 ## Problem Definition
 
-Someone has generously scraped 450k car postings off Craiglist and posted them on Kaggle. I have downloaded this zipped csv and our story begins here. The target variable, price, is in USD. We have eighteen useful covariates here including, a text description of the car, the paint color, the title status, odometer readings and the lat,long of the vehicle. 
+Someone has generously scraped 450k car postings off Craiglist and posted them on Kaggle. I have downloaded this zipped csv and our story begins here. The target variable, price, is in USD. We have eighteen useful covariates here including, a text description of the car, the paint color, the title status, odometer readings and the lat,long of the vehicle amoung others. 
 
 ## Exploratory Data Analysis (EDA)
 
 ### 1. Data Overview
-For an elegant and thorough EDA using y_data_profiling, see output/cleaned_df, and output/raw_df. In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues we will adress in LATER_SECTIOn. Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
+For a thorough EDA using y_data_profiling, see the data [pre_proccessing](results/data_profile_cleaned_subsampled_to_one_percent), and [post processing](results/data_profile_raw_subsampled_to_one_percent). In the interest of space, I will mention the most pertient details. Price is heavily right skewed as is Odometer with some incredible values of 10 million or more; as thats the equivalent to twenty round trips to the moon, safe to say there are some data quality issues. We will adress this in [data preprocessing](#data-preprocessing). Another pertintent topic is the high frequency of carvana ads at XYZ%; as they have higher data quality, and more consistency across ads, they form an interesting part of the puzzle. 
 
-Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen word frequnecy (explained here)[###2-feature-engineering] and odometer. Which suggests certain words are used to more or less frequently depending on car mileage; this should conform to expectations. No one describes their 2022 Sports car as reliable; that term of endearment is for the family workhorse that's been picking up groceries for a decade or more. Finally, manufacturer shows a correlation with cylinders and transimiison type which again confroms to common sense. FInally, about eleven percent of the rows appear to be exact duplicates. They could be truly differnt cars but to match, price and odometer, color, etc exactly strains belief so we need to investiage. 
+
+Digging into interactions, we see the three headed interaction of price, age and odometer reading. Older machines have more miles and are worth less; untangling mileage from age is a difficult problem perhaps beyond this paper. We also notice interactions bewteen (word frequnecy)[#feature-engineering] and odometer. Which suggests certain words are used to more or less frequently depending on car mileage; this should conform to expectations. No one describes their 2022 Sports car as reliable; that term of endearment is for the family workhorse that's been picking up groceries for a decade or more. Finally, manufacturer shows a correlation with cylinders and transimiison type which again confroms to common sense. FInally, about eleven percent of the rows appear to be exact duplicates. They could be truly differnt cars but to match, price and odometer, color, etc exactly strains belief so we need to investiage. 
 
 
 PROBLEM: ADD num words as variable
@@ -37,14 +38,11 @@ PROBLEM: ADD num words as variable
 - Scatter plots (e.g., price vs. mileage, price vs. year)
 - Correlation heatmaps to show relationships between features
 
-### 3. Outliers Detection
-- Identifying and handling outliers in the data (e.g., unusually low/high prices)
-
 ## Data Preprocessing and Feature Engineering
 ### 1. Handling Missing Values
 Missing price or Odometer readings were removed; they are too crucial to try to impute. Missing values were imputed only for the linear regression approach and the method of imputation was just a standard mean or mode. A brief tour into missing values is in order. All columns are likely a mix Missing Not at Random and Missing at Random. Missing descriptions are probably missing because it would be hard to give a good description of a bad car. A rusted, sun beaten car missing a paint color is missing at random becuase the missingness is really tied to the condition of the car, not the paint color itself. This missingness should cast a bit of doubt on any results from linear regression.
 
-### 3 Filtering Data
+### 2 Filtering Data
 Craigslist seems especially prone to messy data for two reasons; individual posters are not professionals with a corporate image, hiding info is generally advantagous and most importantly price anchoring. Good cars worth a lot are generally owned by more interenet savy people, and spending the time to set up a great ad to gain 2% price is worth more on a more expensive car. Bad stuff is best left unmentioned and then discussed later if asked about.  
 
 The other key problem is [price anchoring](https://en.wikipedia.org/wiki/Anchoring_effect). The highest a buyer will sell his car for is the first price they mention. Much better to let the buyer offer a price and then ask for more regardless. By not listing a price or listing for silly valuse like $9 million or $1, they can avoid anchor their price. 
@@ -66,7 +64,7 @@ I choose a train, valid, test split of 75/20/5.
 | Ordinary Least Squares            | odometer       | `None`                                 | $12110     | 29.2%    |
 | Log Least Squares                 | year, manufacturer, odometer, paint_color, state, title_status| `None`                                 | $10,986     | 41.8%    |
 | LightGBM                          | all standard variables      | `{'learning_rate': 0.01, 'max_depth': 6,'boosting_type': "gbdt"` | $6180    | 81.7%   |
-| LightGBM with Hyperopt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $4998 | 88%    |
+| LightGBM with HyperOpt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $4998 | 88%    |
 
 *Table 1* The four modeling approaches
 
@@ -93,50 +91,49 @@ _*Figure 12*_ Results of the log mulitiple least squares regression, note I cut 
 ### 3.Light GBM
 Linear regression isn't going to cut it on this data set so I'll try another tool, Light GBM. Let's try a naive approach first, using all of our useable varialbes and leaving out any words or feature engineered variables or hyper parameter tuning. Consider it more of a base line approach. The great news is it provided a dramatic improvement in our model preformance.  Our RMSE dropped down to $6,200 and our model is able to explain about 82% of the variation in price. This a dramatic improvement in accuracy but costed us a bit of speed and explainability. Specifically the model went from about 10 seconds to fit model two mentioned above, to about four minutes to fit model three. As this is a model that would likey be trained once a week at most, this is a fine trade off to me.  
 
-Addressing interptability is a bit harder, but for this, I will use [SHAP](https://shap.readthedocs.io/en/latest/index.html) to better understand how specific variable affect the predictions.
+Addressing interptability is a bit harder, but for this, I will use [SHAP](https://shap.readthedocs.io/en/latest/index.html) to better understand how specific variable affect the predictions. The SHAP summary plot below is bit daunting at first. But looking ath the first row, year, the farther right you go, the higher SHAP value, increasing the predicted price. Looking at the color, most of the right most values are red, which are high feature values. This should make sense, higher manufacturing years are newer and are going to sell for more. Odometer has a similiar but exactly opposite story for obvious reasons. Interestingly, longitude, at the lowest values (light blue), are actually associated with positive increases in price (high SHAP values). Why? Well, the west coast, Alaska and Hawaii have the lowest longitude, these are high cost of living places and this is what I think we are seeing! The far right skew in region tells a similar story I believe. However, I havent been able to (yet) figure out what these exact values are, I suspect they are high cost of living locations. Simiarly, title statue for the most part, has no effect on the value, but the occasional value severeally decreases the price. This conforms to our EDA where most titles were clean but some were salvage, parts, or lein, any of which is going to impede a high sales price.  
 
 
 <div style="display: flex; gap: 40px;">
-    <img src="results/light_gbm_basic/predicted_vs_actual.png" alt="Image 1">
-    <img src="results\light_gbm__hyperopt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results\light_gbm_basic/shap_summary_plot.png" alt="Image 1">
+    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
 </div>
 
 
+
+### 4. Light GBM with HyperOpt and Words
+
 From here, there is a kaledoscope of options to try next: hyper parameter tuning, add it text data from the description, utilize lat and long to pull in zip code data, implementing crossvalidation, explore the time and date of posting. 
 
-The first stop was addressing overfit and while here, I might as well set up hyper opt. Hyperopt is one of my favorite tools for hyper optimization. It uses a bayesian framework to more efficeintly search using prior runs to inform future runs. An analogy, You are looking for a plane that flew between New York and London and crashed in the ocean. If you find debries, you should bring all your searchers in to that one spot and really comb that location.
-### 4. Light GBM with Hyperopt and Words
-There are three main hyperparemeters I tried to optimize; learning rate, max depth and number of TF_IDF words. We are not tuning on number of leaves.I have fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html)
- Because Light GBM grows leaf first, not level first. By fitting max depth and setting leaves to be equal to it, you just back yourself in a level first methodology ala random forest. This is okay if you don't have over fit, but we do, so were doing it like this instead. 
+The first stop was addressing overfit and while here, I might as well set up HyperOpt. HyperOpt is one of my favorite tools for hyperparameter optimization. It uses a Bayesian framework to more efficeintly search using prior runs to inform future runs. An analogy, You are looking for a plane that flew between New York and London and crashed in the ocean. If you find debries, you should bring all your searchers in to that one spot and really comb that location.
+
+There are three main hyperparemeters I tried to optimize; learning rate, max depth, number of TF_IDF words and L1, L2 regularization. We are not tuning on number of leaves.I have fixed that to be 65% of 2^max_depth. [Why?](https://lightgbm.readthedocs.io/en/latest/Parameters-Tuning.html). Because Light GBM grows leaf first, not level first. By fitting max depth and setting leaves to be equal to it, you just back yourself in a level first methodology ala random forest. This is okay if you don't have over fit, but we do, so were doing it like this instead. 
+
+Number of TF_IDF was always selected to be max at 500, so the existing code doesn't show this as checking this was wasting compute. Trying both L1 and L2 regualarization at the same time is inspired by ElasticNet; this idea was inspired by [StackExchange](https://datascience.stackexchange.com/questions/57255/l1-l2-regularization-in-light-gbm).
+
+Interpting TF_IDF, TO DO DEVIN
+
 
 
 <div style="display: flex; gap: 40px;">
-    <img src="results/light_gbm_basic/predicted_vs_actual.png" alt="Image 1">
-    <img src="results\light_gbm__hyperopt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
+    <img src="results/light_gbm__hyperopt_and_feature_engineering/predicted_vs_actual.png" alt="Image 1">
+    <img src="results\light_gbm__HyperOpt_and_feature_engineering\predicted_vs_actual.png" alt="Image 2">
 </div>
 
 FIX UP ALT image titles
 
 
+### Compare the given models.
 
-## Model Evaluation
-- Performance metrics used (e.g., R-squared, RMSE, MAE)
-- Cross-validation results
-- Comparison of model performances
-- Discussion on overfitting or underfitting (if applicable)
+Comparing the models, Linear regression should offer interptability and statistical infrence. But without any of the assumptions holding and high correlation, that doesn't really hold. As such, I think Light GBM is just a better model for this use case. The next questions becomes, do you want to use the model with TF_IDF and feature engineering or the base model. The more complex model, four, is about five times slower to train. But in my envisioned use case, it only trains at most once a week. So model training speed isn't super important. Prediction speed is perhaps a bit more important as you want to be scraping data, and predicting on the data daily if not hourly so you can know about the deals asap!
+
+I think the ideal end case is using model four and using a model in combination with SHAP to create a waterfall plot and see how and why the lightGBM model is adjusting the price how it is. From there, you can use subject matter expertise, to agree with, tweak or ignore each prediction. Heres an example from the model we trained.  TO DO DEVIN FILL IN T
+
 
 ## Conclusion and Future Work
-- Summary of key findings from the project
-- Limitations of the current approach
-- Ideas for future improvements, such as:
-  - Using additional data (e.g., incorporating market trends)
-  - Testing with more complex models like deep learning
-  - Improving the feature set
+In conclusion, we found a featured engineered model with text in Light GBM to be the best model. We were able to get an RMSE OF XYZ and epxlaine about UFUF% of the variance in price. The most important variables were odometer, region and year along with word XSSS,SSSD,KKKD,DDDD, TO DO DEVIN. THis current approach has limitiations, it is limited to the time frame the data was scraped (early 2024) and we cut about 15% of the totals rows due to impossible odometers and prices. These were corrupt at random and its hard to say how this changes the model and our depiction of it. Finally, Carvana is a bit player in the market, but given how fractured the craigslist market it, they are by far the ]biggest player. They very well might set the market and more fcuse should be given to their pricign. 
 
 ## Future work
 Pull out useful info from  craigslist carvana ad's. Today there is too much static data in the descriptions that overwhelems TF_IDF, so I turn carvana ad's into a boolean varialbe. A further analysis could just delete the boiler plate and extract the nuggets.
 
 Find and utilzie the images. The current data only points to image URLs; I could go an download all these images and then utilize them. Thats beyond the scope of this project today. But from here, you could build a CVML model to detect car quality. Specifically looking for things like rust, dents, and scratches. I know this is possible and have worekd on it before but can't share more without spilling the secret sauce. 
-
-## References
-- List of papers, articles, or tools referenced during the project.
