@@ -168,14 +168,14 @@ train_fit_score_light_gbm(
 # lightgbm_params["num_leaves"] = int(2 ** lightgbm_params["max_depth"] * 0.65)
 
 
-# print("start fitting Light GBM")
-# # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-# train_fit_score_light_gbm(
-#     input_path="cleaned_edited_feature_engineered_input",
-#     params=None,
-#     output_path="results/light_gbm__hyperopt_and_feature_engineering/",
-#     col_subset=None,
-# )
+print("start fitting Light GBM")
+# train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
+train_fit_score_light_gbm(
+    input_path="cleaned_edited_feature_engineered_input",
+    params=None,
+    output_path="results/light_gbm__hyperopt_and_feature_engineering/",
+    col_subset=None,
+)
 
 
 # model_path = (
