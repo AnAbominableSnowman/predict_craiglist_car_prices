@@ -19,7 +19,8 @@ import polars as pl
 from pathlib import Path
 
 
-def plot_histogram(data: pl.DataFrame, column: str, bins: int = 100) -> None:
+def plot_histogram(data: pl.DataFrame, column: str) -> None:
+    # Filter out null values
     data = data.filter(pl.col(column).is_not_null())
     values = data[column].to_list()
 
@@ -33,20 +34,26 @@ def plot_histogram(data: pl.DataFrame, column: str, bins: int = 100) -> None:
     # Plotting the KDE
     plt.figure(figsize=(10, 6))
     plt.fill_between(x, y, color="#2f2e65", alpha=0.7)
-    if column.lower() == "price":
-        plt.xlabel(f"{column.capitalize()} in US Dollars")
-    elif column.lower() == "odometer":
-        plt.xlabel(f"{column.capitalize()} in Miles")
-    plt.ylabel("Density")
-    plt.title(f"Histogram of {column.capitalize()}")
-    plt.grid(axis="y")
 
+    # Set x-axis label based on column type
+    if column.lower() == "price":
+        plt.xlabel(f"{column.capitalize()} in US Dollars", fontsize=16)
+    elif column.lower() == "odometer":
+        plt.xlabel(f"{column.capitalize()} in Miles", fontsize=16)
+    else:
+        plt.xlabel(column.capitalize(), fontsize=16)
+
+    plt.ylabel("Density", fontsize=16)
+    plt.title(f"Histograms of {column.capitalize()}", fontsize=18)
+    plt.grid(axis="y")
+    plt.tick_params(axis="both", labelsize=14)
+    # Specify output path for saving the plot
     output_path = Path(f"results/visuals/histogram_of_{column}.png")
 
     # Create the directory if it doesn't exist
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Save the histogram as a PNG file
+    # Save the KDE plot as a PNG file
     plt.savefig(output_path)
     plt.close()
 
@@ -77,14 +84,20 @@ def kde_of_category_by_value(
                 print(f"Not enough data for {category_column}: {category_value}")
 
         if value_column.lower() == "price":
-            plt.xlabel(f"{value_column.capitalize()} in US Dollars")
+            plt.xlabel(f"{value_column.capitalize()} in US Dollars", fontsize=18)
         elif value_column.lower() == "odometer":
-            plt.xlabel(f"{value_column.capitalize()} in Miles")
-        plt.ylabel("Density")
+            plt.xlabel(f"{value_column.capitalize()} in Miles", fontsize=18)
+
+        plt.ylabel("Density", fontsize=18)
         plt.title(
-            f"Histograms of {value_column.capitalize()} by {category_column.capitalize()}"
+            f"Histograms of {value_column.capitalize()} by {category_column.capitalize()}",
+            fontsize=18,
         )
-        plt.legend(title=f"{category_column.capitalize()}")
+        plt.tick_params(axis="both", labelsize=14)
+        plt.legend(
+            title=f"{category_column.capitalize()}", fontsize=16, title_fontsize=18
+        )
+
         output_path = Path(
             f"results/visuals/histogram_of_{value_column}_by_{category_column}.png"
         )
