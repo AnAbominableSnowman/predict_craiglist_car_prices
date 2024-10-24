@@ -57,7 +57,7 @@ def train_lightgbm(
         valid_sets=[train_data, test_data],
         valid_names=["training", "validation"],
         callbacks=[
-            lgb.early_stopping(stopping_rounds=10, min_delta=4.0),
+            lgb.early_stopping(stopping_rounds=10, min_delta=10.0),
             lgb.record_evaluation(evals_result),
         ],
     )
@@ -118,7 +118,7 @@ def objective(params, cars, target_column):
         "metric": "root_mean_squared_error",
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
-        "min_data_in_leaf": 2000,  # Fixed value
+        "min_data_in_leaf": 5000,  # Fixed value
         "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
         "lambda_l1": params["lambda_l1"],  # Include L1 regularization
         "lambda_l2": params["lambda_l2"],  # Include L2 regularization
@@ -157,7 +157,7 @@ def train_fit_score_light_gbm(
             fn=lambda params: objective(params, cars, "price"),
             space=space,
             algo=tpe.suggest,
-            max_evals=20,
+            max_evals=50,
         )
         # Convert float depth to int
         best_params["max_depth"] = int(best_params["max_depth"])

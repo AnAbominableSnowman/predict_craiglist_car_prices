@@ -15,20 +15,39 @@ def generate_profiling_report(
     profile.to_file(output_path)
 
 
-def plot_histogram(data: pl.DataFrame, column: str, bin_width: int = 500) -> None:
+import polars as pl
+from pathlib import Path
+
+
+def plot_histogram(data: pl.DataFrame, column: str, bins: int = 100) -> None:
+    data = data.filter(pl.col(column).is_not_null())
     values = data[column].to_list()
 
-    # Calculate the number of bins based on the range of values
-    bins = range(int(min(values)), int(max(values)) + bin_width, bin_width)
+    # Create a KDE object
+    kde = gaussian_kde(values)
 
-    # Plotting the histogram
+    # Generate a range of values for the x-axis
+    x = np.linspace(min(values), max(values), 1000)
+    y = kde(x)
+
+    # Plotting the KDE
     plt.figure(figsize=(10, 6))
-    plt.hist(values, bins=bins, color="blue", alpha=0.7, edgecolor="black")
-    plt.xlabel(column.capitalize())
-    plt.ylabel("Frequency")
+    plt.fill_between(x, y, color="#2f2e65", alpha=0.7)
+    if column.lower() == "price":
+        plt.xlabel(f"{column.capitalize()} in US Dollars")
+    elif column.lower() == "odometer":
+        plt.xlabel(f"{column.capitalize()} in Miles")
+    plt.ylabel("Density")
     plt.title(f"Histogram of {column.capitalize()}")
     plt.grid(axis="y")
-    plt.show()
+
+    output_path = Path(f"results/visuals/histogram_of_{column}.png")
+
+    # Create the directory if it doesn't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Save the histogram as a PNG file
+    plt.savefig(output_path)
     plt.close()
 
 
@@ -57,15 +76,25 @@ def kde_of_category_by_value(
             else:
                 print(f"Not enough data for {category_column}: {category_value}")
 
-        plt.xlabel(value_column.capitalize())
+        if value_column.lower() == "price":
+            plt.xlabel(f"{value_column.capitalize()} in US Dollars")
+        elif value_column.lower() == "odometer":
+            plt.xlabel(f"{value_column.capitalize()} in Miles")
         plt.ylabel("Density")
         plt.title(
-            f"KDE of {value_column.capitalize()} by {category_column.capitalize()}"
+            f"Histograms of {value_column.capitalize()} by {category_column.capitalize()}"
         )
-        plt.legend()
-        plt.grid()
-        plt.show()
-        plt.close()
+        plt.legend(title=f"{category_column.capitalize()}")
+        output_path = Path(
+            f"results/visuals/histogram_of_{value_column}_by_{category_column}.png"
+        )
+
+        # Create the directory if it doesn't exist
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Save the histogram as a PNG file
+        plt.savefig(output_path)
+
     else:
         print(
             f"The '{value_column}' or '{category_column}' column does not exist in the DataFrame."
