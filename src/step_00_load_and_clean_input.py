@@ -165,3 +165,30 @@ def switch_condition_to_ordinal(cars: pl.DataFrame) -> pl.DataFrame:
         pl.col("condition").replace(ordinal_mapping).alias("condition")
     )
     return cars
+
+
+def column_statistics(df: pl.DataFrame) -> None:
+    row_count = df.height
+    print(f"Total Row Count: {row_count}")
+
+    for col in df.columns:
+        total_count = row_count
+        missing_count = df[col].null_count()
+        zero_count = (
+            df.filter(pl.col(col) == 0).height
+            if df.schema[col] in [pl.Int64, pl.Float64]
+            else 0
+        )
+        distinct_count = df[col].n_unique()
+        print(
+            f"Column Name{ col} % Missing{ round((missing_count / total_count) * 100,1)}% Zeros {round((zero_count / total_count) * 100,1)}% Distinct{ round((distinct_count / total_count) * 100,1)}"
+        )
+
+
+def count_empty_description_rows(df: pl.DataFrame) -> None:
+    empty_string_count = df.filter(
+        (pl.col("description") == "") | pl.col("description").is_null()
+    ).height
+    print(
+        f"Number of rows where 'description' is an empty string: {empty_string_count}"
+    )
