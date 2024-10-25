@@ -6,7 +6,51 @@ import numpy as np
 from sklearn.metrics import r2_score, root_mean_squared_error
 import statsmodels.api as sm
 import os
-from numpy import ndarray
+from numpy import ndarray, log
+import polars as pl
+from sklearn.impute import SimpleImputer
+
+
+def fit_model_one(path: str = "intermediate_data/cleaned_and_edited_input.parquet"):
+    cars = pl.read_parquet(path)
+    # linear regression won't handle this missing vals nicely. So here I,
+    # encode them with mean or mode. This isn't as elegant as possible.
+    # But sufficent for a first pass with linear regression.
+    cars_imputed_missing_for_lin_regrs = fill_missing_values_column_level(
+        cars,
+        ["odometer"],
+    )
+    cars_imputed_missing_for_lin_regrs = cars_imputed_missing_for_lin_regrs.to_pandas()
+    y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
+    X = cars_imputed_missing_for_lin_regrs
+
+    train_fit_score_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
+
+
+def fit_model_two(path: str = "intermediate_data/cleaned_and_edited_input.parquet"):
+    cars = pl.read_parquet(path)
+    covariates = [
+        "odometer",
+        "year",
+        "manufacturer",
+        "state",
+        "title_status",
+        "paint_color",
+    ]
+    # linear regression won't handle these missing vals nicely. So here I,
+    # encode them with mean or mode. This isn't as elegant as possible.
+    # But sufficent for a first pass with linear regression.
+    cars_imputed_missing_for_lin_regrs = fill_missing_values_column_level(
+        cars,
+        covariates,
+    )
+    cars_imputed_missing_for_lin_regrs = cars_imputed_missing_for_lin_regrs.to_pandas()
+    y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
+    X = cars_imputed_missing_for_lin_regrs
+
+    train_fit_score_linear_regression(
+        X[covariates], log(y), log=True, one_hot_encode=True
+    )
 
 
 def train_fit_score_linear_regression(
@@ -19,7 +63,7 @@ def train_fit_score_linear_regression(
 
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42
+        X, y, test_size=0.2, random_state=2018
     )
 
     # Create and fit the linear regression model using statsmodels
@@ -126,3 +170,34 @@ def one_hot_columns(cars: pd.DataFrame) -> pd.DataFrame:
 
     X = pd.concat(processed_columns, axis=1)
     return X
+
+
+def fill_missing_values_column_level(
+    df: pl.DataFrame, columns: list[str]
+) -> pl.DataFrame:
+    # not sure if this is needed?
+    updated_df = df.clone()
+
+    # doing it col by col is inefficent,
+    # but this is only done for a few columns and is a pretty cheap
+    # operation so I wont optimize.
+    for col in columns:
+        if col in df.columns:
+            col_type = df.schema[col]
+            # Reshape for the imputer
+            data = updated_df[col].to_numpy().reshape(-1, 1)
+            # Create the appropriate imputer
+            if col_type == pl.Int64 or col_type == pl.UInt32:
+                imputer = SimpleImputer(strategy="mean")
+            elif col_type == pl.Utf8:
+                imputer = SimpleImputer(strategy="most_frequent")
+            else:
+                continue
+
+            imputed_data = imputer.fit_transform(data)
+
+            updated_df = updated_df.with_columns(
+                pl.Series(name=col, values=imputed_data.flatten())
+            )
+
+    return updated_df

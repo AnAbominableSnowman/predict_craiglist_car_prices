@@ -1,8 +1,61 @@
 from __future__ import annotations
 import polars as pl
-from sklearn.impute import SimpleImputer
 import zipfile
 from pathlib import Path
+
+
+def unzip_and_clean_data():
+    # pull in and unzip the zip from kaggle
+    cars = unzip_and_load_csv(r"inputs/vehicles.csv.zip", r"inputs/vehicles_unzipped")
+
+    # these are mostly non informative columns like URL, or constant values, or columns that
+    # the author mentioned were corrupted.
+    cars = drop_unnecessary_columns(cars)
+    # we'll pump these out as a record, of what the data looked pre processing.
+    # This will mostly be used in Ydata-profiling to give an idea of how data cleaning
+    # affected the data.
+    cars.write_parquet("intermediate_data/raw_input.parquet")
+    print(f"starting rows{cars.height}")
+    # create boolean for descriptions
+    cars = detect_if_description_exists(cars)
+    print(
+        f"number of ad's with description: {cars.filter(pl.col('description_exists')).height}"
+    )
+    # # # ## about %10 of data are carvana ads
+    cars = detect_if_carvana_ad(cars)
+    print(
+        f"number of carvana ads and corresponding descriptions deleted: {cars.filter(pl.col('carvana_ad')).height}"
+    )
+
+    cars = delete_description_if_caravana(cars)
+
+    # # # condition has a natural ranking so I encode that. IE. like new is better then fair
+    cars = switch_condition_to_ordinal(cars)
+    print(
+        f"number of conditions switched to ordinal: {cars.filter(pl.col('condition').is_not_null()).height}"
+    )
+
+    # # These values are incredibly rare and most of these values
+    # # are misstypes, people avoiding sharing info, and the rare spam ad.
+    # # Alof of this is called price anchoring.
+    cars = drop_out_impossible_values(cars, "odometer", 300_000, True)
+    cars = drop_out_impossible_values(cars, "price", 125_000, True)
+    cars = drop_out_impossible_values(cars, "price", 2_000, False)
+
+    # # # manufacturer is a huge source of cardinality here. With one of mfgers, and
+    # # # mispellings like Forde. By setting all rare manufacturers to other,
+    # # # I can reduce the problem.
+    # this doesn't help light gbm and should only be done in linear regression. so lets move it there
+    # cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
+
+    # we seem to have about 45,000 duplicate recrods.
+    # its unlikely to have two cars selling in the same location,
+    # with the same price, mileage and color, etc. So ill drop them.
+    num_rows_before_deduping = cars.height
+    cars = remove_duplicate_rows(cars)
+    print(f"rows lost due to deduping: {num_rows_before_deduping- cars.height}")
+
+    cars.write_parquet("intermediate_data/cleaned_and_edited_input.parquet")
 
 
 def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFrame:
@@ -32,6 +85,44 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
         "size",
     )
     return cars
+
+
+def replace_rare_and_null_manufacturer(
+    cars: pl.DataFrame, percent_needed: float, replacement_value: str
+) -> pl.DataFrame:
+    total_rows = cars.height
+    cars = cars.with_columns(pl.col("manufacturer").alias("org_manuf")).drop(
+        "manufacturer"
+    )
+    # Group by the 'manufacturer' column and count occurrences
+    grouped_df = (
+        cars.group_by("org_manuf")
+        .agg(pl.len().alias("count"))
+        .with_columns((pl.col("count") / total_rows * 100).alias("percent_of_total"))
+    )
+
+    # Replace manufacturers with less than 3% of total with "Other"
+    grouped_df = (
+        grouped_df.with_columns(
+            pl.when(pl.col("percent_of_total") < percent_needed)
+            .then(pl.lit(replacement_value))
+            .when(pl.col("org_manuf").is_null())
+            .then(pl.lit(replacement_value))
+            .otherwise(pl.col("org_manuf"))
+            .alias("manufacturer")
+        )
+        .select("manufacturer")
+        .unique()
+    )
+
+    joined_df = cars.join(
+        grouped_df,
+        left_on="org_manuf",
+        right_on="manufacturer",
+        how="left",
+        coalesce=False,
+    )
+    return joined_df
 
 
 def detect_if_description_exists(cars: pl.DataFrame) -> pl.DataFrame:
@@ -118,37 +209,6 @@ def drop_out_impossible_values(
 def remove_duplicate_rows(cars: pl.DataFrame) -> pl.DataFrame:
     cars = cars.unique()
     return cars
-
-
-def fill_missing_values_column_level(
-    df: pl.DataFrame, columns: list[str]
-) -> pl.DataFrame:
-    # not sure if this is needed?
-    updated_df = df.clone()
-
-    # doing it col by col is inefficent,
-    # but this is only done for a few columns and is a pretty cheap
-    # operation so I wont optimize.
-    for col in columns:
-        if col in df.columns:
-            col_type = df.schema[col]
-            # Reshape for the imputer
-            data = updated_df[col].to_numpy().reshape(-1, 1)
-            # Create the appropriate imputer
-            if col_type == pl.Int64 or col_type == pl.UInt32:
-                imputer = SimpleImputer(strategy="mean")
-            elif col_type == pl.Utf8:
-                imputer = SimpleImputer(strategy="most_frequent")
-            else:
-                continue
-
-            imputed_data = imputer.fit_transform(data)
-
-            updated_df = updated_df.with_columns(
-                pl.Series(name=col, values=imputed_data.flatten())
-            )
-
-    return updated_df
 
 
 def switch_condition_to_ordinal(cars: pl.DataFrame) -> pl.DataFrame:

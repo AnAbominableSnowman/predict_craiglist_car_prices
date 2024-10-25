@@ -1,25 +1,13 @@
 [tool.ruff]
-# Enable all linting checks
-select = ["*"]
-
-# Enable automatic fix on save
-#fix = true
-
-# This option does not affect Ruff; it's included for documentation purposes
-unfixable = ["F401"]  # Unused imports - this is not a valid option in Ruff
-
-# Ignore specific checks (including unused imports)
-ignore = ["F401"]  # Prevents automatic fixing of unused import check
-
+#select = ["*"]
+fixable = ["*", "!F401"]  
+# Exclude specific directories
+exclude = ["__pycache__", ".git", "venv", "env"]
 # Exclude specific directories and files from checks (if needed)
 exclude = ["__pycache__", ".git", "venv", "env"]
 
-# Specify the maximum line length (default is 88)
+# Set maximum line length (default is 88)
 line-length = 88
 
 # Enable type checking (if using type annotations)
 enable-type-checking = true
-
-# Optionally, you can add specific file types to check
-# Uncomment if you want to include other file types
-# extensions = ["*.py"]  # Defaults to .py; add others if needed
