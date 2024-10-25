@@ -18,14 +18,21 @@ def plot_shap_summary(
     shap_values = shap_analysis(model, data)
 
     # Plot SHAP summary plot
-    print("Creating SHAP summary plot...")
-    plt.figure()
-    shap.summary_plot(shap_values.values, data, show=False)
-    plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
-    plt.close()
+    # print("Creating SHAP summary plot...")
+    # plt.figure()
+    # shap.summary_plot(shap_values.values, data, show=False)
+    # plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
+    # plt.close()
 
     # Pass SHAP values to waterfall plot function
     plot_shap_waterfall(shap_values, data, output_dir, row_index=100)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=120)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=140)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=160)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=200)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=320)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=340)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=460)
 
 
 def plot_shap_waterfall(
