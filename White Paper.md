@@ -184,16 +184,14 @@ I focused on optimizing a few hyperparameters: learning rate, maximum depth, the
 
 After several rounds of HyperOpt, each run pointed to the max number of TF_IDF words being optimal so I set TF_IDF to 500 columns. Additionally, I wanted to tackle overfitting with L1 and L2 regularization. I chose to use both at the same time as I was inspired by ElasticNet. L1 can be thought as promoting sparsity in the features and feature importance. While L2 can be thought of as pushing the weights in the model closer to 0. L1 is less important here as we have already done feature selection and sparsity is therefore less important. Learning rate can be thought of as how quickly the model conforms to the data. Too slow and you waste compute, too fast and you rush to conclusions and over fit. The last variable I tuned was max depth.
 
-Getting to the results, Interpeting TF_IDF is nice in this chart. The solid light blue bands at 0 represent TF_IDF score of 0 and ads without descriptions, ie, the word never appeared in that description. So looking at things like tfidf_1500, you can see how the presence of a word (red dots) changed the value!
-
+Getting to the results, Interpeting TF_IDF is nice in this chart. The solid light blue bands at 0 represent TF_IDF score of 0 and ads without descriptions, ie, the word never appeared in that description. So looking at things like tfidf_crew, cab, truck and diesel, you can see how the presence of a word (red dots) increased the value! This generally conforms to our expectation that trucks are more expensive and hold resale value longer. Perhaps creating a boolean variable for truck could also help. Similarly, luxury ammenenties like leather and navigation, ie the red dots are associated with higher prices overall. Finally, two unclear cases stand out that required some investigating: tifidf_67l and tfidf_1500. Once again, trucks are the answer. 1500 traditionally denotes a light duty pick up capable of carrying half a ton. Truck brands such as Chevrolet and Ram still describe their low end trucks as 1500. Which is why we see high values of 1500, ie, the word 1500 is in the description alot, with lower SHAP values as they are lower end, cheaper trucks. 6.7L refers to a very large diesel engine on the largest of large vehicles which explains its relationship its positive correlation with expensive vehicles.   
 
 <div style="display: flex; gap: 10px;">
     <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" alt="Image 1"style="width:500px; height:auto;">
     <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" alt="Image 2"style="width:550px; height:auto;">
 </div>
 
-***Figure 7*** *DEVIN TO DO*
-
+***Figure 7*** *SHAP summary for trucks and RMSE over training. A bit more overfitting here and words related to trucks show up alot in our SHAP analysis.*
 
 #### Table 3: The four modeling approaches
 
