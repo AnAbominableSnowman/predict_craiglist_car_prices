@@ -15,17 +15,25 @@ def unzip_and_clean_data():
     # This will mostly be used in Ydata-profiling to give an idea of how data cleaning
     # affected the data.
     cars.write_parquet("intermediate_data/raw_input.parquet")
-
+    print(f"starting rows{cars.height}")
     # create boolean for descriptions
     cars = detect_if_description_exists(cars)
-
+    print(
+        f"number of ad's with description: {cars.filter(pl.col('description_exists')).height}"
+    )
     # # # ## about %10 of data are carvana ads
     cars = detect_if_carvana_ad(cars)
+    print(
+        f"number of carvana ads and corresponding descriptions deleted: {cars.filter(pl.col('carvana_ad')).height}"
+    )
 
     cars = delete_description_if_caravana(cars)
 
     # # # condition has a natural ranking so I encode that. IE. like new is better then fair
     cars = switch_condition_to_ordinal(cars)
+    print(
+        f"number of conditions switched to ordinal: {cars.filter(pl.col('condition').is_not_null()).height}"
+    )
 
     # # These values are incredibly rare and most of these values
     # # are misstypes, people avoiding sharing info, and the rare spam ad.
@@ -43,7 +51,9 @@ def unzip_and_clean_data():
     # we seem to have about 45,000 duplicate recrods.
     # its unlikely to have two cars selling in the same location,
     # with the same price, mileage and color, etc. So ill drop them.
+    num_rows_before_deduping = cars.height
     cars = remove_duplicate_rows(cars)
+    print(f"rows lost due to deduping: {num_rows_before_deduping- cars.height}")
 
     cars.write_parquet("intermediate_data/cleaned_and_edited_input.parquet")
 

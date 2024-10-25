@@ -24,6 +24,7 @@ def fit_model_three():
         "verbose": -1,
         "lambda_l1": 0,
         "lambda_l2": 0,
+        "random_seed": 2018,
     }
 
     basic_cols = [
@@ -210,6 +211,7 @@ def objective(params, cars, target_column):
         "lambda_l1": params["lambda_l1"],  # Include L1 regularization
         "lambda_l2": params["lambda_l2"],  # Include L2 regularization
         "verbose": -1,
+        "random_seed": 2018,
     }
 
     model, y_pred, eval_results = train_lightgbm(
@@ -235,10 +237,16 @@ def train_fit_score_light_gbm(
     if params is None:
         # Define the search space for Hyperopt (if not using predefined params)
         space = {
-            "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
+            # using log uniform here, we can get more sampling in the lower smaller regions.
+            # e^-75 = .006, e^-1.7 - .18
+            "learning_rate": hp.loguniform("learning_rate", -7, -1),
             "max_depth": hp.quniform("max_depth", 4, 10, 1),
-            "lambda_l1": hp.uniform("lambda_l1", 0.0, 3.0),  # L1 regularization
-            "lambda_l2": hp.uniform("lambda_l2", 0.0, 3.0),  # L2 regularization
+            "lambda_l1": hp.uniform(
+                "lambda_l1", 0.0, 100.0
+            ),  # 0 to 100 suggested by https://www.kaggle.com/code/bextuychiev/lgbm-optuna-hyperparameter-tuning-w-
+            "lambda_l2": hp.uniform(
+                "lambda_l2", 0.0, 100.0
+            ),  # 0 to 100 suggested by https://www.kaggle.com/code/bextuychiev/lgbm-optuna-hyperparameter-tuning-w-understanding
         }
         best_params = fmin(
             fn=lambda params: objective(params, cars, "price"),
@@ -269,6 +277,7 @@ def train_fit_score_light_gbm(
         "lambda_l1": best_params["lambda_l1"],  # Include L1 regularization
         "lambda_l2": best_params["lambda_l2"],  # Include L2 regularization
         "verbose": -1,
+        "random_seed": 2018,
     }
 
     model, y_pred, evals_result = train_lightgbm(
