@@ -6,42 +6,14 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 # with occasiaonlly missing descriptions.
 
 
-def replace_rare_and_null_manufacturer(
-    cars: pl.DataFrame, percent_needed: float, replacement_value: str
-) -> pl.DataFrame:
-    total_rows = cars.height
-    cars = cars.with_columns(pl.col("manufacturer").alias("org_manuf")).drop(
-        "manufacturer"
-    )
-    # Group by the 'manufacturer' column and count occurrences
-    grouped_df = (
-        cars.group_by("org_manuf")
-        .agg(pl.len().alias("count"))
-        .with_columns((pl.col("count") / total_rows * 100).alias("percent_of_total"))
-    )
+def feature_engineer_data():
+    cars = pl.read_parquet("intermediate_data/cleaned_and_edited_input.parquet")
+    cars = remove_punc_short_words_lower_case(cars)
+    cars = create_tf_idf_cols(cars, 500)
 
-    # Replace manufacturers with less than 3% of total with "Other"
-    grouped_df = (
-        grouped_df.with_columns(
-            pl.when(pl.col("percent_of_total") < percent_needed)
-            .then(pl.lit(replacement_value))
-            .when(pl.col("org_manuf").is_null())
-            .then(pl.lit(replacement_value))
-            .otherwise(pl.col("org_manuf"))
-            .alias("manufacturer")
-        )
-        .select("manufacturer")
-        .unique()
+    cars.write_parquet(
+        "intermediate_data/cleaned_edited_feature_engineered_input.parquet"
     )
-
-    joined_df = cars.join(
-        grouped_df,
-        left_on="org_manuf",
-        right_on="manufacturer",
-        how="left",
-        coalesce=False,
-    )
-    return joined_df
 
 
 def remove_punc_short_words_lower_case(cars: pl.DataFrame) -> pl.DataFrame:

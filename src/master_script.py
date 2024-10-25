@@ -4,25 +4,27 @@ from step_00_load_and_clean_input import (
     detect_if_carvana_ad,
     switch_condition_to_ordinal,
     drop_out_impossible_values,
-    fill_missing_values_column_level,
     delete_description_if_caravana,
     remove_duplicate_rows,
     detect_if_description_exists,
+    replace_rare_and_null_manufacturer,
 )
 from step_01_feature_engineering import (
     remove_punc_short_words_lower_case,
     create_tf_idf_cols,
-    replace_rare_and_null_manufacturer,
+   
 )
-from src.step_03_linear_regression_approach import train_fit_score_linear_regression
+from src.step_03_linear_regression_approach import train_fit_score_linear_regression, fill_missing_values_column_level,
 from src.step_04_lightgbm_approach_with_text_and_hyperopt import (
     train_fit_score_light_gbm,
 )
 import polars as pl
 from numpy import log
+import pickle
+import json
 
 # # pull in and unzip the zip from kaggle
-cars = unzip_and_load_csv(r"inputs\vehicles.csv.zip", r"inputs\vehicles_unzipped")
+cars = unzip_and_load_csv(r"inputs/vehicles.csv.zip", r"inputs\vehicles_unzipped")
 
 # these are mostly non informative columns like URL, or constant values, or columns that
 # the author mentioned were corrupted.
@@ -48,11 +50,6 @@ cars = switch_condition_to_ordinal(cars)
 cars = drop_out_impossible_values(cars, "odometer", 300_000, True)
 cars = drop_out_impossible_values(cars, "price", 125_000, True)
 cars = drop_out_impossible_values(cars, "price", 2_000, False)
-
-# manufacturer is a huge source of cardinality here. With one of mfgers, and
-# mispellings like Forde. By setting all rare manufacturers to other,
-# I can reduce the problem.
-cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
 
 # for some reason, we have 45k duplicate rows which feel impossible.
 cars = remove_duplicate_rows(cars)
@@ -143,24 +140,26 @@ train_fit_score_light_gbm(
     col_subset=basic_cols,
 )
 
-lightgbm_params = {
-    "objective": "regression",
-    "metric": "mean_squared_error",
-    "boosting_type": "gbdt",
-    "learning_rate": 0.05032013271321068,
-    "max_depth": 8,
-    "min_data_in_leaf": 5000,  # Fixed value
-    "verbose": -1,
-}
+ # Load the pickled JSON file
+with open(
+    r"results/light_gbm__hyperopt_and_feature_engineering/final_params.pkl",
+    "rb",
+) as file:
+    hyperparams = pickle.load(file)
+
+# If the data inside the pickle file is JSON, convert it to a dictionary
+if isinstance(hyperparams, str):  # In case it's a JSON string
+    hyperparams = json.loads(hyperparams)
 
 # Calculate num_leaves based on max_depth
-lightgbm_params["num_leaves"] = int(2 ** lightgbm_params["max_depth"] * 0.65)
+hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
+
 
 print("start fitting Light GBM")
 # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
 train_fit_score_light_gbm(
     input_path="cleaned_edited_feature_engineered_input",
-    params=lightgbm_params,
+    params=hyperparams,
     output_path="results_from_master/light_gbm__hyperopt_and_feature_engineering/",
     col_subset=None,
 )

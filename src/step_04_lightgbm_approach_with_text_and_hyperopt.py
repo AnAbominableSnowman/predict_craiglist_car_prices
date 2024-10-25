@@ -11,6 +11,92 @@ from hyperopt import hp, fmin, tpe
 import pickle
 import json
 from pathlib import Path
+from step_05_shap_analysis import plot_shap_summary
+
+
+def fit_model_three():
+    lightgbm_params = {
+        "objective": "regression",
+        "metric": "root_mean_squared_error",
+        "boosting_type": "gbdt",
+        "learning_rate": 0.1,
+        "max_depth": 6,
+        "verbose": -1,
+        "lambda_l1": 0,
+        "lambda_l2": 0,
+    }
+
+    basic_cols = [
+        "region",
+        "price",
+        "year",
+        "model",
+        "condition",
+        "cylinders",
+        "fuel",
+        "odometer",
+        "title_status",
+        "transmission",
+        "drive",
+        "type",
+        "paint_color",
+        "state",
+        "lat",
+        "long",
+        "manufacturer",
+    ]
+
+    train_fit_score_light_gbm(
+        input_path="cleaned_edited_feature_engineered_input",
+        params=lightgbm_params,
+        output_path="results/light_gbm_basic/",
+        col_subset=basic_cols,
+    )
+
+    plot_shap_summary(
+        model_path="results/light_gbm_basic/best_lightgbm_model.pkl",
+        data_path="intermediate_data/cleaned_edited_feature_engineered_input.parquet",
+        output_dir="results/light_gbm_basic/",
+        col_subset=basic_cols,
+    )
+
+
+def fit_model_four(hyper_parm_tune: bool):
+    if hyper_parm_tune:
+        prompt_confirmation()
+        train_fit_score_light_gbm(
+            input_path="cleaned_edited_feature_engineered_input",
+            params=None,
+            output_path="results/light_gbm__hyperopt_and_feature_engineering/",
+            col_subset=None,
+        )
+    else:
+        # Load the pickled JSON file
+        with open(
+            r"results/light_gbm__hyperopt_and_feature_engineering/final_params.pkl",
+            "rb",
+        ) as file:
+            hyperparams = pickle.load(file)
+
+        # If the data inside the pickle file is JSON, convert it to a dictionary
+        if isinstance(hyperparams, str):  # In case it's a JSON string
+            hyperparams = json.loads(hyperparams)
+
+        # Calculate num_leaves based on max_depth
+        hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
+
+        train_fit_score_light_gbm(
+            input_path="cleaned_edited_feature_engineered_input",
+            params=hyperparams,
+            output_path="results/light_gbm__hyperopt_and_feature_engineering/",
+            col_subset=None,
+        )
+    plot_shap_summary(
+        model_path="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
+        data_path="intermediate_data/cleaned_edited_feature_engineered_input.parquet",
+        output_dir="results/light_gbm__hyperopt_and_feature_engineering/",
+        col_subset=None,
+    )
 
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
@@ -87,6 +173,7 @@ def evaluate_model(y_test, y_pred, model_path):
 
 
 def plot_results(y_test, y_pred, save_path):
+    plt.figure()
     residuals = y_test - y_pred
     plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.4)
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
@@ -118,7 +205,7 @@ def objective(params, cars, target_column):
         "metric": "root_mean_squared_error",
         "learning_rate": params["learning_rate"],
         "max_depth": int(params["max_depth"]),
-        "min_data_in_leaf": 5000,  # Fixed value
+        "min_data_in_leaf": 2000,  # Fixed value
         "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
         "lambda_l1": params["lambda_l1"],  # Include L1 regularization
         "lambda_l2": params["lambda_l2"],  # Include L2 regularization
@@ -143,16 +230,16 @@ def train_fit_score_light_gbm(
         cars = cars[col_subset]
 
     model_name = "results/LightGBM"
-    # Define the search space for Hyperopt (if not using predefined params)
-    space = {
-        "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
-        "max_depth": hp.quniform("max_depth", 4, 10, 1),
-        "lambda_l1": hp.uniform("lambda_l1", 0.0, 3.0),  # L1 regularization
-        "lambda_l2": hp.uniform("lambda_l2", 0.0, 3.0),  # L2 regularization
-    }
 
     # If no params are passed, run the optimization using Hyperopt's fmin
     if params is None:
+        # Define the search space for Hyperopt (if not using predefined params)
+        space = {
+            "learning_rate": hp.uniform("learning_rate", 0.01, 0.3),
+            "max_depth": hp.quniform("max_depth", 4, 10, 1),
+            "lambda_l1": hp.uniform("lambda_l1", 0.0, 3.0),  # L1 regularization
+            "lambda_l2": hp.uniform("lambda_l2", 0.0, 3.0),  # L2 regularization
+        }
         best_params = fmin(
             fn=lambda params: objective(params, cars, "price"),
             space=space,
@@ -167,9 +254,10 @@ def train_fit_score_light_gbm(
         best_params = params
 
     if col_subset is not None:
-        X_train, X_test, y_train, y_test = split_data(cars[col_subset], "price")
+        X_train, X_test, y_train, y_test = split_data(cars, "price")
     else:
         X_train, X_test, y_train, y_test = split_data(cars, "price")
+
     # Prepare params for the final model
     final_params = {
         "objective": "regression",
@@ -202,8 +290,9 @@ def train_fit_score_light_gbm(
 
 
 def plot_rmse_over_rounds(evals_result, save_path):
+    # light gbm has a built in method to do this BUT
+    # it wasn't as good as I'd like.
     plt.figure(figsize=(10, 5))
-    print(evals_result)
     train_rmse = evals_result["training"]["rmse"]
     valid_rmse = evals_result["validation"]["rmse"]
 
@@ -222,5 +311,22 @@ def plot_rmse_over_rounds(evals_result, save_path):
     plt.close()
 
 
-# Example usage
-# train_fit_score_light_gbm("your_file_name")
+def prompt_confirmation():
+    # Prompt the user for confirmation
+    response = (
+        input(
+            "You are about to manually tune a Light GBM model. This takes about 3 hours on my modest machine. Are you sure you wish to proceed? (yes/no): "
+        )
+        .strip()
+        .lower()
+    )
+
+    # Check the response
+    if response in ["yes", "y"]:
+        print(
+            "User confirmed to proceed! You can cancel at any time. My hyper optimized parameters are stored in a different folder and can be used if you over write them here."
+        )
+    elif response in ["no", "n"]:
+        print("User canceled the action.")
+    else:
+        print("Invalid input. Please enter 'yes' or 'no'.")

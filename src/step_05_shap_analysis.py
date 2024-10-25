@@ -5,6 +5,25 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 
+def plot_shap_summary(
+    model_path: str, data_path: str, output_dir: str, col_subset: list
+):
+    """Plot SHAP summary and dependence plots for all categorical variables."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    model = load_model(model_path)
+    data = load_data(data_path, col_subset)
+
+    shap_values = shap_analysis(model, data)
+
+    # Plot SHAP summary plot
+    print("Creating SHAP summary plot...")
+    plt.figure()
+    shap.summary_plot(shap_values.values, data, show=False)
+    plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
+    plt.close()
+
+
 def load_model(model_path: str):
     """Load a pickled model."""
     with open(model_path, "rb") as file:
@@ -39,34 +58,3 @@ def shap_analysis(model, X: pd.DataFrame):
     explainer = shap.TreeExplainer(model)
     shap_values = explainer(X)
     return shap_values
-
-
-def plot_shap_dependence_for_categoricals(
-    model_path: str, data_path: str, output_dir: str, col_subset: list
-):
-    """Plot SHAP summary and dependence plots for all categorical variables."""
-    os.makedirs(output_dir, exist_ok=True)
-
-    model = load_model(model_path)
-    data = load_data(data_path, col_subset)
-
-    shap_values = shap_analysis(model, data)
-
-    # Plot SHAP summary plot
-    print("Creating SHAP summary plot...")
-    shap.summary_plot(shap_values.values, data, show=False)
-    plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
-    plt.close()
-
-    # # Plot SHAP dependence plots for categorical variables
-    # # categorical_columns = data.select_dtypes(include=["category"]).columns.tolist()
-    # from numpy import number
-
-    # # Plot SHAP dependence plots for numeric variables only
-    # numeric_columns = data.select_dtypes(include=[number]).columns.tolist()
-    # print(numeric_columns)
-    # for num_col in numeric_columns:
-    #     print(f"Creating SHAP dependence plot for {num_col}...")
-    #     shap.dependence_plot(num_col, shap_values.values, data, show=False)
-    #     plt.savefig(os.path.join(output_dir, f"shap_dependence_{num_col}.png"))
-    #     plt.close()

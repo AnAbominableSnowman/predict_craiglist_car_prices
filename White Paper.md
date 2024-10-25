@@ -56,15 +56,18 @@ For a thorough EDA using `y_data_profiling`, see the visualizations from [pre_pr
 
 Figure X, Notice the right ward skew of both fields and the spike of 0s in price. Not shown are 346, and 3032 observations greater then /$125,000 and 300,000 miles respectivley
 
-Digging into correlations below, we see interactions among price, age, and odometer reading. Older vehicles typically have more miles and are worth less; untangling mileage from age is a complex problem that is be beyond the scope of this paper. We also notice interactions between (word frequnecy)[#feature-engineering] and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. No one describes their brand new sports car as "reliable"; that term of endearment is typically reserved for the family workhorse van that has been picking up groceries for a decade or more. Note, for brevity, tf_idf words and correlations aren't in the paper but can be found [here](results)
+Digging into correlations below, we see interactions among price, age, and odometer reading. Older vehicles typically have more miles and are worth less; untangling mileage from age is a complex problem that is be beyond the scope of this paper. We also notice interactions between (word frequnecy, ie, TF_IDF)[#feature-engineering] and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. No one describes their brand new sports car as "reliable"; that term of endearment is typically reserved for the family workhorse van that has been picking up groceries for a decade or more. In general, words seem negatively correlated with the odometer. Which makes sense as more verbose ads are going to be associated with nicer, newer, more expensive cars. Finally, the manufacturer shows a correlation with both the number of cylinders and transmission type, which again conforms to common sense.
 
-<img src="results/visuals/corrgram_clean.png" alt="Description of the image" style="width:650px; height:auto;" />
+<div style="display: flex; gap: 40px;">
+<img src="results/visuals/corrgram_raw.png" alt="Description of the image" style="width:650px; height:auto;" />
+<img src="results/visuals/corrgram_cleaned.png" alt="Description of the image" style="width:650px; height:auto;" />
+</div>
 
-Figure X, The Correlation gram is spearman and Cramer V correlations. https://www.motortrend.com/features/worst-resale-value-pickup-trucks/
+Figure X, The Correlation gram for the raw and cleaned data respectivley. Correlations here are Spearman and Cramer V correlations. 
 
 
-Finally, the manufacturer shows a correlation with both the number of cylinders and transmission type, which again conforms to common sense. Additionally, about eleven percent of the rows appear to be exact duplicates. While they could represent truly different cars, the exact matching of price, odometer, color, etc., strains credibility, so we will drop these results. Likely people are reposting the same ad to make their ad appear new. A final interaction I wanted to examine was how price and mileage vary by manufacturer. Manufacturer, is probably one of our most important variables. Interestingly, we do see some manufacturers with distinct patterns XX seems to have more low mileage cars on the market while YY seems to have more expensive used cars. 
 
+Additionally, about eleven percent of the rows appear to be exact duplicates. While they could represent truly different cars, the exact matching of price, odometer, color, etc., strains credibility, so we will drop these results. Likely people are reposting the same ad to make their ad appear new. A final interaction I wanted to examine was how price and mileage vary by manufacturer. Manufacturer, is probably one of our most important variables. Interestingly, we do see some manufacturers with distinct patterns BMW seems to have more low mileage cars on the market. I'd suggest two hypothesis: They are luxury cars bought beyond someone's means and the need sold. Or as they quip, "the cheapest part of owning a luxury car is the monthly payment." Perhaps high costs of mainteance, gas and parts forces people to sell them earlier. Ram's higher average price is baffling as it seems totally disregard my understanding and [MotorTrend's reporting](https://www.motortrend.com/features/worst-resale-value-pickup-trucks/). They have three of the top 10 worst reselling trucks's as Ram trucks.
 <div style="display: flex; gap: 10px;">
     <img src="results/visuals/histogram_of_odometer_by_manufacturer.png" alt="Image 1"style="width:650px; height:auto;">
     <img src="results/visuals/histogram_of_price_by_manufacturer.png" alt="Image 2"style="width:650px; height:auto;">
@@ -72,11 +75,6 @@ Finally, the manufacturer shows a correlation with both the number of cylinders 
 
 Figure Y,  Notice how Ram and Toyota, respectively seem to buck the trend. Note, only popular manuacturers shown here. 
 
-
-### 2. Data Visualization
-- Histograms of numerical features (e.g., price distribution)
-- Scatter plots (e.g., price vs. mileage, price vs. year)
-- Correlation heatmaps to show relationships between features
 
 ## Data Preprocessing and Feature Engineering
 ### 1. Handling Missing Values
@@ -93,6 +91,19 @@ With this in mind, I applied several filters to the dataset. I removed any cars 
 This process primarily consisted of two parts. The first part involved standard feature engineering. I created flags to indicate whether the ad included a description and whether it was a Carvana ad. Additionally, I converted the condition from a categorical to an ordinal variable. The categories "Excellent," "Fair," and "Poor" have a clear order, and this information should be retained. Similarly, I converted the number of cylinders from a string to a numeric type to preserve that ordinal information but this created a column of mixed types that polars would infrequently fail on; so this code has been removed and [an issue](https://github.com/AnAbominableSnowman/video_game_sales_predictions/issues/17) created to one day replace it.
 
 The more interesting piece of feature engineering involved analyzing the description text. Much of the text analysis centers on classification and sentiment analysis. My initial approach was a bag-of-words style method, but I pivoted to[term frequency, inverse document frequency](https://builtin.com/articles/tf-idf). In short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that appear frequently in a specific document are also weighted more heavily (TF). Ultimately, this results in a column of words along with their scores for each individual row (i.e., description). We can then use these as variables in our modeling later on. A key probelm in TF_IDF however was the Carvana Ads. With each ad having over a thousand words of identical boiler plate and tens of thousands of ads, Carvana washed out a lot otherwise useful words. To get around this, after labeling ads as Carvana ads, I deleted the description.
+
+| Cleaning Step               | Columns Affected               | Values Created / Modified      | Rows Changed / Deleted |
+|-----------------------------|---------------------------------|-------------------------------|------------------------|
+| Drop Unnesscary Columns     | Deleted   id, url, region_url, VIN, image_url, county, posting_date, size|         | all rows updated      |
+| Create Boolean for Description exist | create description_exists column                       |  boolean    | all rows updated      |
+| detect if Carvana ad     | is_carvana_ad                          | booleam            | all rows updated       |
+| delete description if caravana      | description                       | drop description if its carvana ad   | XYZ?       |
+| switch condition to ordinal    | condition                      | moved strings to ints to capture order   | XYZ?         |
+| drop impossible prices          | any price below $2k or above $125k | row deleted      | xyz       |
+| drop impossible odometer          | mileage above 300k miles (ie 20 round trips to the moon)                    | row deleted        | XYZ?       |
+| Deduplicate Listings         | all columns                    | Removed exact duplicates       | XYZ?       |
+| Normalize Price Values       | price                          | Adjusted for inflation         | 1000 rows modified     |
+| Merge with Manufacturer Data | manufacturer, country_of_origin | Added country of origin column | 600 rows updated       |
 
 ## Modeling
 
@@ -152,8 +163,8 @@ I focused on optimizing three main hyperparameters: learning rate, maximum depth
 
 The maximum number of TF-IDF features is set to 500, ie, the max, after several rounds of HyperOpt all pointed to that being optimal. Additionally, simultaneously applying both L1 and L2 regularization is inspired by ElasticNet, which combines the strengths of both regularization techniques to enhance model performance. This idea was inspired by [StackExchange](https://datascience.stackexchange.com/questions/57255/l1-l2-regularization-in-light-gbm).
 
-Interpting TF_IDF, TO DO DEVIN
 
+Interpting the results of TF_IDF is nice in this chart, the solid light blue bands at 0 represent TF_IDF score of 0, ie, the word never appeared in that description. So looking at things like tfidf_1500,  
 
 
 <div style="display: flex; gap: 40px;">

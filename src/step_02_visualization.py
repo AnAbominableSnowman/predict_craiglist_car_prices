@@ -3,6 +3,8 @@ from ydata_profiling import ProfileReport
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 import numpy as np
+from step_00_load_and_clean_input import replace_rare_and_null_manufacturer
+from pathlib import Path
 
 
 def generate_profiling_report(
@@ -15,8 +17,86 @@ def generate_profiling_report(
     profile.to_file(output_path)
 
 
-import polars as pl
-from pathlib import Path
+def visuals_for_report_hist_and_first_kde(
+    path: str = r"intermediate_data/cleaned_and_edited_input.parquet",
+):
+    cars = pl.read_parquet(path)
+    cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
+
+    plot_histogram(cars, "price")
+    plot_histogram(cars, "odometer")
+    kde_of_category_by_value(cars, "manufacturer", "price")
+
+
+def visuals_for_report_second_kde_and_data_dict(
+    path: str = r"intermediate_data/cleaned_and_edited_input.parquet",
+):
+    cars = pl.read_parquet(path)
+    cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
+
+    kde_of_category_by_value(cars, "manufacturer", "odometer")
+    column_statistics(cars)
+    count_empty_description_rows(cars)
+
+
+def generate_ydata_eda(raw_or_clean: str):
+    if raw_or_clean.lower == "raw":
+        raw_cars = pl.read_parquet("intermediate_data/raw_input.parquet")
+        generate_profiling_report(
+            # emojis in description kill y_data
+            raw_cars.drop("description"),
+            "results/data_profile_raw_subsampled_to_three_percent.html",
+            0.03,
+        )
+    elif raw_or_clean.lower == "clean":
+        clean_cars = pl.read_parquet(
+            "intermediate_data/cleaned_and_edited_input.parquet"
+        )
+        # Select columns that don't start with 'TF_IDF'
+        non_tf_idf_columns = [
+            col for col in clean_cars.columns if not col.startswith("tf")
+        ]
+
+        # Select the first 10 columns that start with 'TF_IDF'
+        tf_idf_columns = [col for col in clean_cars.columns if col.startswith("tf")][
+            :10
+        ]
+
+        # Combine the two selections
+        selected_columns = list(set(non_tf_idf_columns + tf_idf_columns))
+        generate_profiling_report(
+            # emojis in description kill y_data
+            clean_cars.select(selected_columns),
+            "results/data_profile_cleaned_subsampled_to_three_percent.html",
+            0.03,
+        )
+
+
+def column_statistics(df: pl.DataFrame) -> None:
+    row_count = df.height
+    print(f"Total Row Count: {row_count}")
+
+    for col in df.columns:
+        total_count = row_count
+        missing_count = df[col].null_count()
+        zero_count = (
+            df.filter(pl.col(col) == 0).height
+            if df.schema[col] in [pl.Int64, pl.Float64]
+            else 0
+        )
+        distinct_count = df[col].n_unique()
+        print(
+            f"Column Name{ col} % Missing{ round((missing_count / total_count) * 100,1)}% Zeros {round((zero_count / total_count) * 100,1)}% Distinct{ round((distinct_count / total_count) * 100,1)}"
+        )
+
+
+def count_empty_description_rows(df: pl.DataFrame) -> None:
+    empty_string_count = df.filter(
+        (pl.col("description") == "") | pl.col("description").is_null()
+    ).height
+    print(
+        f"Number of rows where 'description' is an empty string: {empty_string_count}"
+    )
 
 
 def plot_histogram(data: pl.DataFrame, column: str) -> None:

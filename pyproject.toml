@@ -1,14 +1,13 @@
 [tool.ruff]
-select = ["*"]
-
-# Ignore F401 to avoid warnings or fixes related to unused imports
-ignore = ["F401"]
-
+#select = ["*"]
+fixable = ["*", "!F401"]  
 # Exclude specific directories
 exclude = ["__pycache__", ".git", "venv", "env"]
+# Exclude specific directories and files from checks (if needed)
+exclude = ["__pycache__", ".git", "venv", "env"]
 
-# Enable automatic fixing, but unused imports will be ignored
-fix = true
-
-# Specify line-length
+# Set maximum line length (default is 88)
 line-length = 88
+
+# Enable type checking (if using type annotations)
+enable-type-checking = true
