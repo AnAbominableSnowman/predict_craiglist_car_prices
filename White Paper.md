@@ -19,6 +19,11 @@ To predict Craigslist ad car prices, I developed a light GBM model. We were able
 8. [Model Comparasions and Usage Example](#model-evaluation)
 9. [Conclusion and](#conclusion)
 10. [Future Work](#future-work)
+    - 10.1 [Renovate Carvana Ads](#reno-carv)
+    - 10.2 [Build CVML damage spotter](#cvml)
+    - 10.3 [CV for model training](#cv)
+    - 10.4 [Add Unit Testing](#unit-testing)
+    - 10.5 [Zip Code Data](#zipcode)
 11. [References](#references)
 
 ## Introduction
@@ -58,27 +63,27 @@ A generous contributor has scraped 463,000 car postings from Craigslist and shar
 
 For a thorough EDA using `y_data_profiling`, see the visualizations on a subsample of the data from [before proccessing](results/data_profile_cleaned_subsampled_to_one_percent) and [after processing](results/data_profile_raw_subsampled_to_one_percent). In the interest of space, I will mention the most pertinent details. The price variable is heavily right-skewed, as is the odometer reading, which contains some incredible values of 10 million miles or more—equivalent to twenty round trips to the moon. It’s safe to say there are some data quality issues, which we will address in [data preprocessing](#data-preprocessing). Another pertinent topic is the high frequency of Carvana ads at 15%; since they exhibit higher data quality and more consistency across ads, they form an interesting part of the puzzle. However, their descriptions are mostly identicial boilerplate across many ads. 
 
-<div style="display: flex; gap: 40px;">
-    <img src="results\visuals\histogram_of_price.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results\visuals\histogram_of_odometer.png" alt="Image 2"style="width:650px; height:auto;">
+<div style="display: flex; gap: 10px;">
+    <img src="results\visuals\histogram_of_price.png" alt="Image 1"style="width:500px; height:auto;">
+    <img src="results\visuals\histogram_of_odometer.png" alt="Image 2"style="width:500px; height:auto;">
 </div>
 
 ***Figure 1***: *Notice the right ward skew of both fields and the spike of 0s in price. Not shown are 346, and 3032 observations greater then \$125,000 and 300,000 miles respectivley*
 
-Digging into correlations below, we see interactions among price, age, and odometer reading. Older vehicles typically have more miles and are worth less; untangling mileage from age is a complex problem that is be beyond the scope of this paper. We also notice interactions between (word frequnecy, ie, TF_IDF)[#feature-engineering] and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. No one describes their brand new sports car as "reliable"; that term of endearment is typically reserved for the family workhorse van that has been picking up groceries for a decade or more. In general, words seem negatively correlated with the odometer. Which makes sense as more verbose ads are going to be associated with nicer, newer, more expensive vehicles. Finally, the manufacturer shows a correlation with both the number of cylinders and transmission type, which again conforms to common sense.
+Digging into correlations below, we see interactions among price, age, and odometer reading. Older vehicles typically have more miles and are worth less; untangling mileage from age is a complex problem that is be beyond the scope of this paper. We also notice interactions between (word frequnecy, ie, TF_IDF)[#feature-eng] and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. No one describes their brand new sports car as "reliable"; that term of endearment is typically reserved for the family workhorse van that has been picking up groceries for a decade or more. In general, words seem negatively correlated with the odometer. Which makes sense as more verbose ads are going to be associated with nicer, newer, more expensive vehicles. Finally, the manufacturer shows a correlation with both the number of cylinders and transmission type, which again conforms to common sense.
 
-<div style="display: flex; gap: 40px;">
-<img src="results/visuals/corrgram_raw.png" alt="Description of the image" style="width:650px; height:auto;" />
-<img src="results/visuals/corrgram_cleaned.png" alt="Description of the image" style="width:650px; height:auto;" />
+<div style="display: flex; gap: 10px;">
+<img src="results/visuals/corrgram_raw.png" alt="Description of the image" style="width:500px; height:auto;" />
+<img src="results/visuals/corrgram_cleaned.png" alt="Description of the image" style="width:500px; height:auto;" />
 </div>
 
 ***Figure 2***: *The Correlation gram for the raw and cleaned data respectivley. Correlations here are Spearman and Cramer V correlations.* 
 
-Additionally, about eleven percent of the rows appear to be exact duplicates. While they could represent truly different automobiles, the exact matching of price, odometer, color, etc., strains credibility, so we will drop these results. Likely people are reposting the same ad to make their ad appear new. A final interaction I wanted to examine was how price and mileage vary by manufacturer. Manufacturer, is probably one of our most important variables. Interestingly, we do see some manufacturers with distinct patterns. BMW seems to have more low mileage cars on the market. Note to the reader, I will use cars, automobiles and vehicles interchangeably throughout the text. I'd suggest two hypothesis: they are luxury cars bought beyond someone's means and then need to be sold. Or as they quip, "the cheapest part of owning a luxury car is the monthly payment." Perhaps the high costs of mainteance, gas and insurance force people to sell them earlier. Ram's higher average price is baffling as it seems totally to disagree with [MotorTrend's reporting](https://www.motortrend.com/features/worst-resale-value-pickup-trucks/). They have three of the top 10 worst reselling trucks's as Ram trucks.
+Additionally, about eleven percent of the rows appear to be exact duplicates of other rows. While they could represent truly different automobiles, the exact matching of price, odometer, color, etc., strains credibility, so we will drop these results. Likely people are reposting the same ad to make their ad appear new. A final interaction I wanted to examine was how price and mileage vary by manufacturer. Manufacturer, is probably one of our most important variables. Interestingly, we do see some manufacturers with distinct patterns. BMW seems to have more low mileage cars on the market. Note to the reader, I will use cars, automobiles and vehicles interchangeably throughout the text. I'd suggest two hypothesis: they are luxury cars bought beyond someone's means and then need to be sold. Or as they quip, "the cheapest part of owning a luxury car is the monthly payment." Perhaps the high costs of mainteance, gas and insurance force people to sell them earlier. Ram's higher average price is baffling as it seems totally to disagree with [MotorTrend's reporting](https://www.motortrend.com/features/worst-resale-value-pickup-trucks/). They have three of the top 10 worst reselling trucks's as Ram trucks.
 
 <div style="display: flex; gap: 10px;">
-    <img src="results/visuals/histogram_of_odometer_by_manufacturer.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results/visuals/histogram_of_price_by_manufacturer.png" alt="Image 2"style="width:650px; height:auto;">
+    <img src="results/visuals/histogram_of_odometer_by_manufacturer.png" alt="Image 1"style="width:550px; height:auto;">
+    <img src="results/visuals/histogram_of_price_by_manufacturer.png" alt="Image 2"style="width:550px; height:auto;">
 </div>
 
 ***Figure 3***  *Notice how BMW and Ram, respectively seem to buck the trend. Note, only popular manuacturers shown here.* 
@@ -87,7 +92,7 @@ Additionally, about eleven percent of the rows appear to be exact duplicates. Wh
 ## Data Preprocessing and Feature Engineering
 
 ### 1. Handling Missing Values
-Missing price or odometer readings were removed, as they are too crucial to attempt imputation. Missing values were only imputed for the linear regression approach, using a standard mean or mode method. I imputed thsee columns: year, manufacturer,state, title_status, paint_color. A brief examination of missing values is in order. All columns likely exhibit a mix of Missing Not at Random (MNAR) and Missing at Random (MAR). Missing descriptions are probably absent because it’s difficult to provide a good description for a poorly maintained car. Conversely, a rusted, sun-beaten car missing a paint color is missing at random, as the absence is tied to the condition of the car rather than the paint color itself. This type of missingness should cast some doubt on any results derived from the linear regression analysis. Being more frank, any analysis should be somewhat questioned with data accidentally, intentionally and perhaps maliciously missing. 
+Missing price or odometer readings were removed, as they are too crucial to attempt imputation. Missing values were only imputed for the linear regression approach, using a standard mean or mode method. I imputed thsee columns: year, manufacturer,state, title_status, paint_color. A brief examination of missing values is in order. All columns likely exhibit a mix of Missing Not at Random (MNAR) and Missing at Random (MAR). Missing descriptions are probably absent because it’s difficult to provide a good description for a poorly maintained car. Conversely, a rusted, sun-beaten car missing a paint color is missing not at random, as the absence is tied to the condition of the car rather than the paint color itself. This type of missingness should cast some doubt on any results derived from the linear regression analysis. Being more frank, any analysis should be somewhat questioned with data accidentally, intentionally and perhaps maliciously missing. 
 
 ### 2. Filtering Data
 Craigslist seems especially prone to messy data for two reasons: individual posters are not professionals with a corporate image, and hiding information is generally advantageous—most importantly, due to price anchoring. Good cars that are worth a lot are typically owned by more internet-savvy individuals, who understand that spending time to create a great ad to gain even a 2% increase in price is worth it for a more expensive car. Conversely, the negative aspects of a car are often best left unmentioned and discussed later if inquiries arise.
@@ -99,7 +104,7 @@ With this in mind, I applied several filters to the dataset. I removed any cars 
 ### 3. Feature Engineering
 This process primarily consisted of two parts. The first part involved standard feature engineering. I created flags to indicate whether the ad included a description and whether it was a Carvana ad. Additionally, I converted the condition from a categorical to an ordinal variable. The categories "Excellent," "Fair," and "Poor" have a clear order, and this information should be retained. Similarly, I converted the number of cylinders from a string to a numeric type to preserve that ordinal information but this created a column of mixed types that polars would infrequently fail on; so this code has been removed and [an issue](https://github.com/AnAbominableSnowman/video_game_sales_predictions/issues/17) created to one day replace it.
 
-The more interesting piece of feature engineering involved analyzing the description text. Much of the text analysis centers on classification and sentiment analysis. My initial approach was a bag-of-words style method, but I pivoted to[term frequency, inverse document frequency](https://builtin.com/articles/tf-idf). In short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that appear frequently in a specific document are also weighted more heavily (TF). Ultimately, this results in a column of words along with their scores for each individual row (i.e., description). We can then use these as variables in our modeling later on. A key probelm in TF_IDF however was the Carvana Ads. With each ad having over a thousand words of identical boiler plate and tens of thousands of ads, Carvana washed out a lot otherwise useful words. To get around this, after labeling ads as Carvana ads, I deleted the description.
+The more interesting piece of feature engineering involved analyzing the description text. Much of the text analysis centers on classification and sentiment analysis. My initial approach was a bag-of-words style method, but I pivoted to[term frequency, inverse document frequency](https://builtin.com/articles/tf-idf). In short, words that appear in fewer descriptions are weighted more heavily (IDF), while words that appear frequently in a specific document are also weighted more heavily (TF). Ultimately, this results in a column of words along with their scores for each individual row (i.e., description). We can then use these as variables in our modeling later on. A key probelm in TF_IDF however was the Carvana Ads. With each ad having over a thousand words of identical boiler plate and tens of thousands of ads, Carvana washed out a lot otherwise useful words. To get around this, after labeling ads as Carvana ads, I deleted the description. Finally, I set 10% of the data to be [test data](intermediate_data\raw_input.parquet).  
 
 #### Table 2: Data Cleaning Process
 
@@ -123,12 +128,13 @@ The more interesting piece of feature engineering involved analyzing the descrip
 ### 1. Simple Ordinary Least Squares
 I iterated through four models in this project, progressively improving with each iteration. To assess model quality, I will use RMSE and R² while also favoring simpler models with equivalent success. My first model was the starting point for almost any good regression data science project: linear regression. My baseline was ordinary least squares regression with the odometer as my covariate.
 
-The good news is that this model trains incredibly quickly and is the most interpretable of all models. I obtained a final RMSE of \$12,000 and an R² of 29%. This means the model is off by about \$12,000 on average, which isn't good enough for our use case. While the odometer explains about 29% of the total variation in price, the model's extreme interpretability is also a plus: any car's value starts at \$31,140, and each consecutive mile reduces its value by 12.75 cents.
+The good news is that this model trains incredibly quickly and is the most interpretable of all models. I obtained a final RMSE of \$12,000 and an R² of 29%. This means the model is off by about \$12,000 on average, which isn't good enough for our use case. While the odometer explains about 29% of the total variation in price, the model's extreme interpretability is also a plus: any car's value starts at \$31,140, and for each 1,000 miles driven, the price decreases by \$127.
 
 In the interest of brevity, I won't delve too deeply into checking the assumptions, as they all fail: linearity, homoscedasticity, and normality. While many types of inference are robust, this is too much for even the most robust linear regression inferences. Left with an uninterpretable and inaccurate model, it's time to go back to the drawing board. Another issue is the negative predictions; after 250,000 miles, the model starts predicting negative prices.
-<div style="display: flex; gap: 40px;">
-    <img src="results/Simple Linear Regression of Price by Odometer/residuals.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results/Simple Linear Regression of Price by Odometer/ols_results.png" alt="Image 2"style="width:650px; height:auto;">
+
+<div style="display: flex; gap: 10px;">
+    <img src="results/Simple Linear Regression of Price by Odometer/residuals.png" alt="Image 1"style="width:500px; height:auto;">
+    <img src="results/Simple Linear Regression of Price by Odometer/ols_results.png" alt="Image 2"style="width:500px; height:auto;">
 </div>
 
 ***Figure 4*** *Results of the simple least squares regression, note how many predictions in the residuals are actually negative.*  
@@ -139,11 +145,11 @@ In my next model, I aimed to tackle two issues: many negative price predictions 
 
 The second strategy for addressing an underfitting model involved introducing additional terms: year, manufacturer, state, title status, and paint color. I selected these variables because they exhibit low cardinality, align with lived experience and common sense, and have low rates of missing values. Variables with a significant number of missing values would require extensive mean/mode imputation, which could diminish their value. Additionally, variables with high cardinality reduce model interpretability and risk fragmenting the data too thinly.
 
-Reviewing the results below, the negative predictions have disappeared, and we observe an improvement in model accuracy, with approximately 40% of the variability in price explained by our model. Furthermore, we are now, on average, off by about \$1,000 less, bringing the RMSE down to \$11,000. While this is a great step toward accuracy, we now have 80 separate terms in the function. Additionally, we have correlated covariates skewing our beta coefficients, leading to peculiar results, such as cars in West Virginia being more expensive than those in New York.
+Reviewing the results below, the negative predictions have disappeared, and we observe an improvement in model accuracy, with approximately 40% of the variability in price explained by our model. Furthermore, we are now, on average, off by about \$1,000 less, bringing the RMSE down to \$11,000. While this is a great step toward accuracy, we now have 80 model parameters in the function. Additionally, we have correlated covariates skewing our beta coefficients, leading to peculiar results, such as cars in West Virginia being more expensive than those in New York.
 
-<div style="display: flex; gap: 40px;">
-    <img src="results/Log price Linear Regression/residuals.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results/Log price Linear Regression/Log_mls_results.png" alt="Image 2"style="width:650px; height:auto;">
+<div style="display: flex; gap: 10px;">
+    <img src="results/Log price Linear Regression/residuals.png" alt="Image 1"style="width:500px; height:auto;">
+    <img src="results/Log price Linear Regression/Log_mls_results.png" alt="Image 2"style="width:500px; height:auto;">
 </div>
 
 ***Figure 5*** *Results of the log mulitiple least squares regression, note I cut off many rows in the results for brevity. Full results can be found in GH.* 
@@ -161,9 +167,9 @@ Odometer has a similar but opposite story for obvious reasons, more mileage, che
 
 Categorical variables are a bit harder to use in SHAP summary plots as they lack the clear sense of bigger to smaller and the resulting colorings. However, some categorical variables do tell a story. The far-right skew in the region seems to suggest region usually doesn't tell affect price much, but it has occasionally driven price up substanially. I haven't figured out how to pinpoint what values these are yet but I suspect they correspond to these high-cost locations. Similarly, title status mostly has no effect on value, but certain titles can severely decrease the price. This aligns with our EDA, where most titles were clean, while some were salvage, parts, or lien. These titles mean the car is in terrible shape or the car is involved in a loan. All of which can steeply drive down a sale price.
 
-<div style="display: flex; gap: 40px;">
-    <img src="results\light_gbm_basic/shap_summary_plot.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results\light_gbm_basic\rmse_over_rounds.png" alt="Image 2"style="width:650px; height:auto;">
+<div style="display: flex; gap: 10px;">
+    <img src="results\light_gbm_basic/shap_summary_plot.png" alt="Image 1"style="width:500px; height:auto;">
+    <img src="results\light_gbm_basic\rmse_over_rounds.png" alt="Image 2"style="width:550px; height:auto;">
 </div>
 
 ***Figure 6*** *The SHAP Summary and RMSE over training for model three.*
@@ -181,9 +187,9 @@ After several rounds of HyperOpt, each run pointed to the max number of TF_IDF w
 Getting to the results, Interpeting TF_IDF is nice in this chart. The solid light blue bands at 0 represent TF_IDF score of 0 and ads without descriptions, ie, the word never appeared in that description. So looking at things like tfidf_1500, you can see how the presence of a word (red dots) changed the value!
 
 
-<div style="display: flex; gap: 40px;">
-    <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" alt="Image 1"style="width:650px; height:auto;">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" alt="Image 2"style="width:650px; height:auto;">
+<div style="display: flex; gap: 10px;">
+    <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" alt="Image 1"style="width:500px; height:auto;">
+    <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" alt="Image 2"style="width:550px; height:auto;">
 </div>
 
 ***Figure 7*** *DEVIN TO DO*
@@ -220,7 +226,7 @@ To tie up the story, I will depict how our anonymous hero is using
 
 
 ## Future work
-### 1. Renovate Craigslist Ad Descriptions
+### 1. Renovate Carvana Ad Descriptions
 Pull out useful info from Craigslist Carvana ads and delete the boiler plate. Today there is too much static data in the descriptions that overwhelems TF_IDF, so I turn Carvana ads into a boolean varialbe. A further analysis could just delete the boiler plate and extract the nuggets of informations.
 
 
@@ -229,6 +235,12 @@ The dataset currently includes only image URLs. Although downloading all images 
 
 ### 3. Cross validation in model training and hyper parameter tuning.
 Cross Validation would be great and would help with over fitting and model accuracy. Unfortuanetly, that invovles more computation and this project is already getting slow on my PC. With a high powered pc or the ability to spin up AWS clusters, you can could definietly pursue that angle. 
+
+### 4. Add unit and intergration tests
+This is all internal with no data changes outside when the CSV changes. So deterministic integration tests should be easy to do. 
+
+### 5. Use lat and long to find socio-economic factors
+Pull in lat and long and do a reverse look up to find nearest zip code. Ik SQL, Google API's and Python all have tools for this. From here, you can use Census data to pull in information about the place the car is sold. Median Income, Urban vs. Rural, Population Density, Mean Income, Crime rates, etc. These are correlated but will likely have some relationship with car price.
 
 ## Resources Consulted:
 https://gabrieltseng.github.io/posts/2018-02-25-XGB/
