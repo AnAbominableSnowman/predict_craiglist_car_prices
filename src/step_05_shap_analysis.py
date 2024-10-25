@@ -14,6 +14,7 @@ def plot_shap_summary(
     model = load_model(model_path)
     data = load_data(data_path, col_subset)
 
+    # Calculate SHAP values once
     shap_values = shap_analysis(model, data)
 
     # Plot SHAP summary plot
@@ -21,6 +22,27 @@ def plot_shap_summary(
     plt.figure()
     shap.summary_plot(shap_values.values, data, show=False)
     plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
+    plt.close()
+
+    # Pass SHAP values to waterfall plot function
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=100)
+
+
+def plot_shap_waterfall(
+    shap_values, data: pd.DataFrame, output_dir: str, row_index: int
+):
+    """Plot SHAP waterfall plot for a specific row."""
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Select the specified row
+    # row_data = data.iloc[[row_index]]
+
+    # Plot SHAP waterfall plot
+    print(f"Creating SHAP waterfall plot for row {row_index}...")
+    plt.figure()
+    shap.waterfall_plot(shap_values[row_index], max_display=10)
+    plt.title(f"SHAP Waterfall Plot for Row {row_index}")
+    plt.savefig(os.path.join(output_dir, f"shap_waterfall_plot_row_{row_index}.png"))
     plt.close()
 
 
@@ -37,11 +59,7 @@ def load_data(data_path: str, col_subset: list = None):
     if col_subset is not None:
         cars = cars[col_subset]
     cars = cars.sample(200_000, random_state=2018)
-    categorical_columns = cars.select_dtypes(
-        include=[
-            "object",
-        ]
-    ).columns.tolist()
+    categorical_columns = cars.select_dtypes(include=["object"]).columns.tolist()
     existing_categorical_columns = [
         col for col in categorical_columns if col in cars.columns
     ]
