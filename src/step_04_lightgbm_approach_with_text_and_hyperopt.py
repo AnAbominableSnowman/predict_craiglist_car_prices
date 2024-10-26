@@ -173,7 +173,7 @@ def evaluate_model(y_test, y_pred, model_path):
     print(f"R-squared (R2): {r2}")
     # Save results to a JSON file
     results = {"RMSE": rmse, "R-squared": r2}
-    # Define the model path
+
     # Define the model path
     model_path = Path(model_path)  # Update with your actual path
 
