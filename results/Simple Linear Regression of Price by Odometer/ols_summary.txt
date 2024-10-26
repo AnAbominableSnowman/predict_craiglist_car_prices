@@ -2,26 +2,26 @@
 ==============================================================================
 Dep. Variable:                      y   R-squared:                       0.293
 Model:                            OLS   Adj. R-squared:                  0.293
-Method:                 Least Squares   F-statistic:                 1.135e+05
-Date:                Thu, 24 Oct 2024   Prob (F-statistic):               0.00
-Time:                        14:38:13   Log-Likelihood:            -2.9718e+06
-No. Observations:              274560   AIC:                         5.944e+06
-Df Residuals:                  274558   BIC:                         5.944e+06
+Method:                 Least Squares   F-statistic:                 1.082e+05
+Date:                Sat, 26 Oct 2024   Prob (F-statistic):               0.00
+Time:                        15:31:17   Log-Likelihood:            -2.8235e+06
+No. Observations:              260832   AIC:                         5.647e+06
+Df Residuals:                  260830   BIC:                         5.647e+06
 Df Model:                           1                                         
 Covariance Type:            nonrobust                                         
 ==============================================================================
                  coef    std err          t      P>|t|      [0.025      0.975]
 ------------------------------------------------------------------------------
-const       3.141e+04     41.064    764.917      0.000    3.13e+04    3.15e+04
-odometer      -0.1277      0.000   -336.930      0.000      -0.128      -0.127
+const       3.148e+04     42.160    746.626      0.000    3.14e+04    3.16e+04
+odometer      -0.1281      0.000   -328.946      0.000      -0.129      -0.127
 ==============================================================================
-Omnibus:                    85713.738   Durbin-Watson:                   2.000
-Prob(Omnibus):                  0.000   Jarque-Bera (JB):           352439.837
-Skew:                           1.503   Prob(JB):                         0.00
-Kurtosis:                       7.667   Cond. No.                     1.92e+05
+Omnibus:                    81599.127   Durbin-Watson:                   2.008
+Prob(Omnibus):                  0.000   Jarque-Bera (JB):           335411.522
+Skew:                           1.506   Prob(JB):                         0.00
+Kurtosis:                       7.668   Cond. No.                     1.92e+05
 ==============================================================================
 
 Notes:
 [1] Standard Errors assume that the covariance matrix of the errors is correctly specified.
 [2] The condition number is large, 1.92e+05. This might indicate that there are
-strong multicollinearity or other numerical problems.rsme is: 12250.052406551022
+strong multicollinearity or other numerical problems.rsme is: 12208.472434715753

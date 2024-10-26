@@ -19,14 +19,14 @@ def plot_shap_summary(
     shap_values = shap_analysis(model, data)
 
     # Plot SHAP summary plot
-    print("Creating SHAP summary plot...")
-    plt.figure()
-    shap.summary_plot(shap_values.values, data, show=False)
-    plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
-    plt.close()
+    # print("Creating SHAP summary plot...")
+    # plt.figure()
+    # shap.summary_plot(shap_values.values, data, show=False)
+    # plt.savefig(os.path.join(output_dir, "shap_summary_plot.png"))
+    # plt.close()
 
     # Pass SHAP values to waterfall plot function
-    plot_shap_waterfall(shap_values, data, output_dir, row_index=100)
+    plot_shap_waterfall(shap_values, data, output_dir, row_index=140)
 
 
 def plot_shap_waterfall(
@@ -34,6 +34,9 @@ def plot_shap_waterfall(
 ):
     """Plot SHAP waterfall plot for a specific row."""
     os.makedirs(output_dir, exist_ok=True)
+
+    # Set global font size
+    plt.rcParams["font.size"] = 18  # Adjust as needed
 
     # Plot SHAP waterfall plot
     print(f"Creating SHAP waterfall plot for row {row_index}...")

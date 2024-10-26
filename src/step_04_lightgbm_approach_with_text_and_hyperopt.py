@@ -47,10 +47,16 @@ def fit_model_three():
         "manufacturer",
     ]
 
-    train_fit_score_light_gbm(
+    train_fit_light_gbm(
         input_path="cleaned_edited_feature_engineered_input",
         params=lightgbm_params,
         output_path="results/light_gbm_basic/",
+        col_subset=basic_cols,
+    )
+    score_model(
+        parquet_file="intermediate_data/test_data.parquet",
+        model_file="results/light_gbm_basic/best_lightgbm_model.pkl",
+        model_name="results/light_gbm_basic",
         col_subset=basic_cols,
     )
 
@@ -65,7 +71,7 @@ def fit_model_three():
 def fit_model_four(hyper_parm_tune: bool):
     if hyper_parm_tune:
         prompt_confirmation()
-        train_fit_score_light_gbm(
+        train_fit_light_gbm(
             input_path="cleaned_edited_feature_engineered_input",
             params=None,
             output_path="results/light_gbm__hyperopt_and_feature_engineering/",
@@ -86,12 +92,19 @@ def fit_model_four(hyper_parm_tune: bool):
         # Calculate num_leaves based on max_depth
         hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
 
-        train_fit_score_light_gbm(
+        train_fit_light_gbm(
             input_path="cleaned_edited_feature_engineered_input",
             params=hyperparams,
             output_path="results/light_gbm__hyperopt_and_feature_engineering/",
             col_subset=None,
         )
+    score_model(
+        parquet_file="intermediate_data/test_data.parquet",
+        model_file="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
+        model_name="results/light_gbm__hyperopt_and_feature_engineering/",
+        col_subset=None,
+    )
+
     plot_shap_summary(
         model_path="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
         data_path="intermediate_data/cleaned_edited_feature_engineered_input.parquet",
@@ -186,7 +199,7 @@ def plot_results(y_test, y_pred, save_path):
     directory = os.path.dirname(f"{save_path}")
     if not os.path.exists(directory):
         os.makedirs(directory)
-    plt.savefig(f"{save_path}predicted_vs_actual.png")
+    plt.savefig(f"{save_path}/predicted_vs_actual.png")
     plt.close()
 
 
@@ -222,7 +235,7 @@ def objective(params, cars, target_column):
     return rmse
 
 
-def train_fit_score_light_gbm(
+def train_fit_light_gbm(
     input_path: str, params, output_path: str, col_subset: list[str]
 ):
     cars = load_and_prepare_data(f"intermediate_data/{input_path}.parquet")
@@ -287,8 +300,7 @@ def train_fit_score_light_gbm(
 
     if output_path is not None:
         model_name = output_path
-    evaluate_model(y_test, y_pred, model_name)
-    plot_results(y_test, y_pred, model_name)
+
     plot_rmse_over_rounds(evals_result, model_name)
 
     # Save the model and parameters
@@ -318,6 +330,33 @@ def plot_rmse_over_rounds(evals_result, save_path):
 
     plt.savefig(f"{save_path}/rmse_over_rounds.png")
     plt.close()
+
+
+def score_model(parquet_file: str, model_file: str, model_name: str, col_subset):
+    # Load the test data
+    test_data = pd.read_parquet(parquet_file)
+    print(test_data.columns)
+
+    if col_subset:
+        test_data = test_data[col_subset]
+    y_test = test_data.pop("price").to_numpy()
+
+    # Load the trained model
+    with open(model_file, "rb") as file:
+        model = pickle.load(file)
+
+    # Check and preprocess categorical features if needed
+    categorical_columns = test_data.select_dtypes(include=["object"]).columns.tolist()
+    if categorical_columns:
+        test_data[categorical_columns] = test_data[categorical_columns].astype(
+            "category"
+        )
+
+    # Make predictions
+    y_pred = model.predict(test_data)
+
+    evaluate_model(y_test, y_pred, model_name)
+    plot_results(y_test, y_pred, model_name)
 
 
 def prompt_confirmation():

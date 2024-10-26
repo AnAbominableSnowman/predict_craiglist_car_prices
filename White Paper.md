@@ -199,28 +199,28 @@ Getting to the results, Interpeting TF_IDF is nice in this chart. The solid ligh
 |-----------------------------------|--------------------|------------------------------|------------|-----------|
 | Ordinary Least Squares            | odometer       | `None`                                 | $12,202    | 29.1%    |
 | Log(Price) Least Squares                 | year, manufacturer, odometer, paint_color, state, title_status| `None`                                 | $11,077     | 51.9%    |
-| LightGBM                          | all standard variables      | `{'learning_rate': 0.1, 'max_depth': 6, 'lambda_l1': 0, 'lambda_l2': 0, 'num_leaves': 41` | $6517    | 79.7%   |
-| LightGBM with HyperOpt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $4998 | 88%    |
+| LightGBM                          | all standard variables      | `{'learning_rate': 0.1, 'max_depth': 6, 'lambda_l1': 0, 'lambda_l2': 0, 'num_leaves': 41` | $6200    | 81.4%   |
+| LightGBM with HyperOpt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $5,412 | 85.8%    |
 
-
-
+*Note the last two models were tested on 5% hold out test data, while the first two were tested on the training data.* 
 
 ## Model comparisions and usage
 Comparing the models, linear regression offers interpretability and statistical inference. However, given that none of the underlying assumptions hold and the presence of high correlation among features, its interpretative value diminishes. Therefore, LightGBM emerges as a more suitable model for this use case.
 
-The next question is whether to use the model with TF-IDF and feature engineering or the base model. The more complex model (Model 4) takes about five times longer to train, but since it is intended to be trained only once a week, training speed is not a critical concern. Prediction speed is more important, as you will want to scrape data and generate predictions daily, if not hourly, to capitalize on deals promptly.
+The next question is whether to use the model with TF-IDF and feature engineering or the base model. The more complex model (Model 4) takes about five times longer to train, but since it is intended to be trained only once a week, training speed is not a critical concern. Prediction speed is more important, as you will want to scrape data and generate predictions daily, if not hourly, to capitalize on deals promptly. Looking at results on the validation data in hyper parameter tuning, I was leaning towards the more complex LightGBM model. So, I finally used my 5% hold out test data to get final test RMSE and R^2 for both lightGBM models.  
 
-Ultimately, I envision using Model 4 alongside SHAP to create a waterfall plot that illustrates how the LightGBM model adjusts prices. This approach allows you to leverage subject matter expertise to validate, adjust, or disregard each prediction. Here’s an example from the model we trained:
-TO DO: DEVIN, PLEASE FILL IN THE DETAILS
 
 ## Conclusion and Future Work
-In conclusion, we determined that a feature-engineered model using LightGBM, which incorporates text data, is the best approach. We achieved an RMSE of XYZ and were able to explain approximately UFUF% of the variance in price. The most significant variables influencing predictions were odometer reading, region, year, and keywords XSSS, SSSD, KKKD, and DDDD. TO DO: DEVIN, PLEASE FILL IN THE DETAILS.
+In conclusion, we determined that a feature-engineered model using LightGBM, which incorporates text data, is the best approach. We achieved an RMSE of $5,412 and were able to explain approximately 85% of the variance in price. The most significant variables influencing predictions were year, odometer reading, manufacturer, cylinders, and drive. Looking at the most important keywords, they were diesel, crew, truck, leather and navigation. This conforms to expectation as these are associated with trucks, a more expensive, slower depreciating asset and high end car upgrades like leather seats and custom naviagtion systems. 
 
-However, this approach has limitations. It is restricted to the data timeframe (early 2024), and we excluded about 15% of the total rows due to implausible odometer readings and prices. These corrupt data points were randomly distributed, making it difficult to assess their impact on the model and our interpretations.
+However, this approach has limitations. It is restricted to the data timeframe (early 2024), and we excluded about 18% of the total rows due to implausible odometer readings and  or duplicate ads. These corrupt data points and missing values are not missing at random and there absence affects our model and our estimates. While Carvana is a relatively minor player in the overall market, it is the largest within the fragmented Craigslist marketplace. Their pricing strategies could significantly influence market dynamics, and more attention should be directed toward their pricing practices.
 
-While Carvana is a relatively minor player in the overall market, it is the largest within the fragmented Craigslist marketplace. Their pricing strategies could significantly influence market dynamics, and more attention should be directed toward their pricing practices.
+To tie up the story, I will depict how our anonymous hero is using Model 4. I envision him using SHAP to create a waterfall plot that illustrates how the LightGBM model adjusts prices. This approach allows you to leverage subject matter expertise to validate, adjust, or disregard each prediction. Here’s an example, row 140 in the test set, using the final model. So we have a Chevy Sedan. Being a 2019 car, it drives the Price up $11,700. The mention of leather drives the price up another $1k, while navigation drives the prices up another $2.2k. However, being a Cheverolet and being a sedan both drive the price down $2k each. You can imagine our hero sitting in the cathode ray tub haze and saying well actually, this is a really deluxe custom naviagation system so maybe increase the price a bit more. And while Drive in our data set is NAN, I actually know its always FWD. So lets re-run this SHAP analysis with Drive = FWD. A meddling of subject matter expertise and quantative knowhow!
 
-To tie up the story, I will depict how our anonymous hero is using 
+<div style="display: flex; gap: 10px;">
+    <img src="results/light_gbm__hyperopt_and_feature_engineering/waterfall for row 140.png" alt="Image 1"style="width:700px; height:auto;">
+</div>
+
 
 
 ## Future work

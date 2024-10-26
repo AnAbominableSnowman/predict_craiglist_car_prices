@@ -14,9 +14,9 @@ from step_01_feature_engineering import (
     create_tf_idf_cols,
    
 )
-from src.step_03_linear_regression_approach import train_fit_score_linear_regression, fill_missing_values_column_level,
+from src.step_03_linear_regression_approach import train_fit_linear_regression, fill_missing_values_column_level,
 from src.step_04_lightgbm_approach_with_text_and_hyperopt import (
-    train_fit_score_light_gbm,
+    train_fit_light_gbm,
 )
 import polars as pl
 from numpy import log
@@ -76,7 +76,7 @@ y = cars_imputed_missing_for_lin_regrs.pop("price").to_numpy()
 X = cars_imputed_missing_for_lin_regrs
 
 # fit model 1
-train_fit_score_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
+train_fit_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
 
 
 # fit model 2
@@ -89,7 +89,7 @@ explanatory_variables = [
     "title_status",
 ]
 
-train_fit_score_linear_regression(
+train_fit_linear_regression(
     X[explanatory_variables], log(y), log=True, one_hot_encode=True
 )
 
@@ -133,7 +133,7 @@ basic_cols = [
 ]
 
 
-train_fit_score_light_gbm(
+train_fit_light_gbm(
     input_path="cleaned_edited_feature_engineered_input",
     params=lightgbm_params,
     output_path="results_from_master/light_gbm_basic/",
@@ -157,7 +157,7 @@ hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
 
 print("start fitting Light GBM")
 # train_fit_score_light_gbm("cleaned_edited_feature_engineered_input")
-train_fit_score_light_gbm(
+train_fit_light_gbm(
     input_path="cleaned_edited_feature_engineered_input",
     params=hyperparams,
     output_path="results_from_master/light_gbm__hyperopt_and_feature_engineering/",
