@@ -1,7 +1,7 @@
 import polars as pl
 from sklearn.feature_extraction import text as sklearn_text
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+from sklearn.model_selection import train_test_split
 # note, this is maybe the most complex step of it, speficially tf_idf and making it work
 # with occasiaonlly missing descriptions.
 
@@ -11,9 +11,11 @@ def feature_engineer_data():
     cars = remove_punc_short_words_lower_case(cars)
     cars = create_tf_idf_cols(cars, 500)
 
-    cars.write_parquet(
+    cars_train, cars_test = train_test_split(cars, test_size=0.05, random_state=2018)
+    cars_train.write_parquet(
         "intermediate_data/cleaned_edited_feature_engineered_input.parquet"
     )
+    cars_test.write_parquet("intermediate_data/test_data.parquet")
 
 
 def remove_punc_short_words_lower_case(cars: pl.DataFrame) -> pl.DataFrame:
