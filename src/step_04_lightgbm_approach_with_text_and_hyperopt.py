@@ -53,7 +53,7 @@ def fit_model_three():
         output_path="results/light_gbm_basic/",
         col_subset=basic_cols,
     )
-    score_model(
+    score_model_on_test(
         parquet_file="intermediate_data/test_data.parquet",
         model_file="results/light_gbm_basic/best_lightgbm_model.pkl",
         model_name="results/light_gbm_basic",
@@ -98,7 +98,7 @@ def fit_model_four(hyper_parm_tune: bool):
             output_path="results/light_gbm__hyperopt_and_feature_engineering/",
             col_subset=None,
         )
-    score_model(
+    score_model_on_test(
         parquet_file="intermediate_data/test_data.parquet",
         model_file="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
         model_name="results/light_gbm__hyperopt_and_feature_engineering/",
@@ -115,30 +115,24 @@ def fit_model_four(hyper_parm_tune: bool):
 
 def load_and_prepare_data(filepath: str) -> pd.DataFrame:
     cars = pd.read_parquet(filepath)
-    categorical_columns = cars.select_dtypes(include=["object"]).columns.tolist()
-    existing_categorical_columns = [
-        col for col in categorical_columns if col in cars.columns
-    ]
-    if existing_categorical_columns:
-        cars[existing_categorical_columns] = cars[existing_categorical_columns].astype(
-            "category"
-        )
+    categorical_columns = cars.select_dtypes(include="object").columns.tolist()
+    cars[categorical_columns] = cars[categorical_columns].astype("category")
     return cars
 
 
 def split_data(cars: pd.DataFrame, target_column: str):
     y = cars.pop(target_column).to_numpy()
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train, X_val, y_train, y_val = train_test_split(
         cars, y, test_size=0.2, random_state=2018
     )
-    return X_train, X_test, y_train, y_test
+    return X_train, X_val, y_train, y_val
 
 
 def train_lightgbm(
     X_train: pd.DataFrame,
-    X_test: pd.DataFrame,
+    X_val: pd.DataFrame,
     y_train: ndarray,
-    y_test: ndarray,
+    y_val: ndarray,
     params: dict,
 ):
     categorical_columns = X_train.select_dtypes(include=["category"]).columns.tolist()
@@ -146,7 +140,7 @@ def train_lightgbm(
     train_data = lgb.Dataset(
         X_train, label=y_train, categorical_feature=categorical_columns
     )
-    test_data = lgb.Dataset(X_test, label=y_test, reference=train_data)
+    val_data = lgb.Dataset(X_val, label=y_val, reference=train_data)
 
     evals_result = {}
 
@@ -154,21 +148,23 @@ def train_lightgbm(
         params,
         train_data,
         num_boost_round=5_000,
-        valid_sets=[train_data, test_data],
+        valid_sets=[train_data, val_data],
         valid_names=["training", "validation"],
         callbacks=[
+            # 10 dollars feels like a meaningful level of imporement but also small.
+            # this could be hyper parm tuned but i dont have compute for it.
             lgb.early_stopping(stopping_rounds=10, min_delta=10.0),
             lgb.record_evaluation(evals_result),
         ],
     )
 
-    y_pred = model.predict(X_test, num_iteration=model.best_iteration)
+    y_pred = model.predict(X_val, num_iteration=model.best_iteration)
     return model, y_pred, evals_result
 
 
-def evaluate_model(y_test, y_pred, model_path):
-    rmse = root_mean_squared_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+def evaluate_model(y_actual, y_pred, model_path):
+    rmse = root_mean_squared_error(y_actual, y_pred)
+    r2 = r2_score(y_actual, y_pred)
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
     # Save results to a JSON file
@@ -186,9 +182,9 @@ def evaluate_model(y_test, y_pred, model_path):
     return rmse, r2
 
 
-def plot_results(y_test, y_pred, save_path):
+def plot_results(y_actual, y_pred, save_path):
     plt.figure()
-    residuals = y_test - y_pred
+    residuals = y_actual - y_pred
     plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.4)
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
     plt.xlabel("Predicted")
@@ -209,7 +205,7 @@ def objective(params, cars, target_column):
     X = cars[selected_features]
     y = cars[target_column]
 
-    X_train, X_test, y_train, y_test = train_test_split(
+    X_train, X_val, y_train, y_val = train_test_split(
         X, y, test_size=0.2, random_state=2018
     )
 
@@ -228,16 +224,16 @@ def objective(params, cars, target_column):
     }
 
     model, y_pred, eval_results = train_lightgbm(
-        X_train, X_test, y_train, y_test, lightgbm_params
+        X_train, X_val, y_train, y_val, lightgbm_params
     )
 
-    rmse = root_mean_squared_error(y_test, y_pred)
+    rmse = root_mean_squared_error(y_val, y_pred)
     return rmse
 
 
 def train_fit_light_gbm(
-    input_path: str, params, output_path: str, col_subset: list[str]
-):
+    input_path: str, params: dict, output_path: str, col_subset: list[str]
+) -> None:
     cars = load_and_prepare_data(f"intermediate_data/{input_path}.parquet")
     if col_subset is not None:
         if "price" not in col_subset:
@@ -274,10 +270,7 @@ def train_fit_light_gbm(
         # Use the provided params directly
         best_params = params
 
-    if col_subset is not None:
-        X_train, X_test, y_train, y_test = split_data(cars, "price")
-    else:
-        X_train, X_test, y_train, y_test = split_data(cars, "price")
+    X_train, X_val, y_train, y_val = split_data(cars, "price")
 
     # Prepare params for the final model
     final_params = {
@@ -294,7 +287,7 @@ def train_fit_light_gbm(
     }
 
     model, y_pred, evals_result = train_lightgbm(
-        X_train, X_test, y_train, y_test, final_params
+        X_train, X_val, y_train, y_val, final_params
     )
     model_name = model_name + "/"
 
@@ -332,25 +325,17 @@ def plot_rmse_over_rounds(evals_result, save_path):
     plt.close()
 
 
-def score_model(parquet_file: str, model_file: str, model_name: str, col_subset):
-    # Load the test data
-    test_data = pd.read_parquet(parquet_file)
-    print(test_data.columns)
-
+def score_model_on_test(
+    parquet_file: str, model_file: str, model_name: str, col_subset
+):
+    test_data = load_and_prepare_data(parquet_file)
+    y_test = test_data.pop("price").to_numpy()
     if col_subset:
         test_data = test_data[col_subset]
-    y_test = test_data.pop("price").to_numpy()
 
     # Load the trained model
     with open(model_file, "rb") as file:
         model = pickle.load(file)
-
-    # Check and preprocess categorical features if needed
-    categorical_columns = test_data.select_dtypes(include=["object"]).columns.tolist()
-    if categorical_columns:
-        test_data[categorical_columns] = test_data[categorical_columns].astype(
-            "category"
-        )
 
     # Make predictions
     y_pred = model.predict(test_data)
