@@ -137,7 +137,7 @@ def print_results(y_test: ndarray, y_pred: ndarray, model, directory) -> None:
     print(f"Root Mean Squared Error (RMSE): {rmse}")
     print(f"R-squared (R2): {r2}")
 
-    # Print the summary of the regression model (including beta coefficients, p-values, F-statistic, etc.)
+    # Print the summary of the regression model
     print("\nModel Summary:")
     print(model.summary())
     with open(f"{directory}/ols_summary.txt", "w") as f:

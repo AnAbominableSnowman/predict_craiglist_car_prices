@@ -17,12 +17,14 @@ def unzip_and_clean_data():
     # affected the data.
     cars.write_parquet("intermediate_data/raw_input.parquet")
     print(f"starting rows{cars.height}")
+
     # create boolean for descriptions
     cars = detect_if_description_exists(cars)
     print(
         f"number of ad's with description: {cars.filter(pl.col('description_exists')).height}"
     )
-    # # # ## about %10 of data are carvana ads
+
+    # about %10 of data are carvana ads
     cars = detect_if_carvana_ad(cars)
     print(
         f"number of carvana ads and corresponding descriptions deleted: {cars.filter(pl.col('carvana_ad')).height}"
@@ -30,24 +32,18 @@ def unzip_and_clean_data():
 
     cars = delete_description_if_caravana(cars)
 
-    # # # condition has a natural ranking so I encode that. IE. like new is better then fair
+    # condition has a natural ranking so I encode that. IE. like new is better then fair
     cars = switch_condition_to_ordinal(cars)
     print(
         f"number of conditions switched to ordinal: {cars.filter(pl.col('condition').is_not_null()).height}"
     )
 
-    # # These values are incredibly rare and most of these values
-    # # are misstypes, people avoiding sharing info, and the rare spam ad.
-    # # Alof of this is called price anchoring.
+    # These values are incredibly rare and most of these values
+    # are misstypes, people avoiding sharing info, and the rare spam ad.
+    # Alot of this is called price anchoring.
     cars = drop_out_impossible_values(cars, "odometer", 300_000, True)
     cars = drop_out_impossible_values(cars, "price", 125_000, True)
     cars = drop_out_impossible_values(cars, "price", 2_000, False)
-
-    # # # manufacturer is a huge source of cardinality here. With one of mfgers, and
-    # # # mispellings like Forde. By setting all rare manufacturers to other,
-    # # # I can reduce the problem.
-    # this doesn't help light gbm and should only be done in linear regression. so lets move it there
-    # cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
 
     # we seem to have about 45,000 duplicate recrods.
     # its unlikely to have two cars selling in the same location,
@@ -59,16 +55,45 @@ def unzip_and_clean_data():
     cars.write_parquet("intermediate_data/cleaned_and_edited_input.parquet")
 
 
-def unzip_and_load_csv(zip_file_path: str, output_directory: str) -> pl.DataFrame:
-    zip_file_path = Path(zip_file_path)
-    output_directory = Path(output_directory)
+def get_zip_file_path(default_path: str = "inputs/vehicles.csv.zip") -> Path:
+    zip_file_path = Path(default_path)
 
+    # Check if the default path exists
+    if zip_file_path.exists() and zip_file_path.is_file():
+        return zip_file_path
+
+    # Prompt the user to enter a new path
+    user_input = input(
+        f"The default file does not exist: {zip_file_path}. Please enter the path to the zip file: "
+    ).strip()
+
+    # Use user input if provided, otherwise raise an error
+    if user_input:
+        zip_file_path = Path(user_input)
+        if not zip_file_path.exists() or not zip_file_path.is_file():
+            raise FileNotFoundError(
+                f"The specified path '{zip_file_path}' does not exist or is not a valid file."
+            )
+    else:
+        raise ValueError("No path provided and default file does not exist.")
+
+    return zip_file_path
+
+
+def unzip_and_load_csv(
+    zip_file_path: str = "inputs/vehicles.csv.zip",
+    output_directory: str = "intermediate_data",
+) -> pl.DataFrame:
+    zip_file_path = get_zip_file_path(zip_file_path)
+
+    output_directory = Path(output_directory)
     # Unzip the file
     with zipfile.ZipFile(zip_file_path, "r") as zip_ref:
         zip_ref.extractall(output_directory)
 
     print(f"Files extracted to {output_directory}")
 
+    # Load the extracted CSV file into a Polars DataFrame
     csv_file_path = output_directory / "vehicles.csv"
     return pl.read_csv(csv_file_path)
 
@@ -91,6 +116,7 @@ def drop_unnecessary_columns(cars: pl.DataFrame) -> pl.DataFrame:
 def replace_rare_and_null_manufacturer(
     cars: pl.DataFrame, percent_needed: float, replacement_value: str
 ) -> pl.DataFrame:
+    # we need this later to take only mfgers with more then 3 percent in the histograms by mfger.
     total_rows = cars.height
     cars = cars.with_columns(pl.col("manufacturer").alias("org_manuf")).drop(
         "manufacturer"
@@ -159,7 +185,8 @@ def detect_if_carvana_ad(cars: pl.DataFrame) -> pl.DataFrame:
             pl.col("description")
             .fill_null("")
             .str.to_lowercase()
-            # almost all carvana ads start with this
+            # almost all carvana ads start with this. We might get false positives.
+            # but i can live with that.
             .str.contains("carvana is the safer way to buy a car")
         ).alias("carvana_ad")
     )
