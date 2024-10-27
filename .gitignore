@@ -1,8 +1,9 @@
 /venv/
-/inputs/
 /cleaned_input.parquet
 /output/
 /shap_plots/
 /intermediate_data/
 /to be deleted/
 *.pyc
+/pycache/
+/inputs/
