@@ -11,6 +11,7 @@ def unzip_and_clean_data():
     # these are mostly non informative columns like URL, or constant values, or columns that
     # the author mentioned were corrupted.
     cars = drop_unnecessary_columns(cars)
+
     # we'll pump these out as a record, of what the data looked pre processing.
     # This will mostly be used in Ydata-profiling to give an idea of how data cleaning
     # affected the data.
