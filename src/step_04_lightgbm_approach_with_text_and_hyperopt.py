@@ -14,8 +14,10 @@ from pathlib import Path
 from step_05_shap_analysis import plot_shap_summary
 
 
-def fit_model_three():
-    lightgbm_params = {
+def fit_model(model_type: str, hyper_parm_tune: bool = False):
+    # Define basic model parameters and columns
+    # we could also save this off as pickle, but not today
+    basic_lightgbm_params = {
         "objective": "regression",
         "metric": "root_mean_squared_error",
         "boosting_type": "gbdt",
@@ -47,69 +49,57 @@ def fit_model_three():
         "manufacturer",
     ]
 
+    if model_type == "basic":
+        # Fit model three logic
+        params = basic_lightgbm_params
+        output_path = "results/light_gbm_basic/"
+        col_subset = basic_cols
+
+    elif model_type == "hyperopt":
+        output_path = "results/light_gbm__hyperopt_and_feature_engineering/"
+        col_subset = None  # Use all columns by default
+
+        if hyper_parm_tune:
+            prompt_confirmation()
+            params = None  # Let hyperparameter tuning define params
+        else:
+            # Load the saved hyperparameters
+            with open(f"{output_path}final_params.pkl", "rb") as file:
+                hyperparams = pickle.load(file)
+
+            # Convert to dictionary if loaded as a JSON string
+            if isinstance(hyperparams, str):
+                hyperparams = json.loads(hyperparams)
+
+            # Calculate num_leaves based on max_depth
+            hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
+            params = hyperparams
+
+    else:
+        raise ValueError("Invalid model_type. Choose 'basic' or 'hyperopt'.")
+
+    # Train model
     train_fit_light_gbm(
         input_path="cleaned_edited_feature_engineered_input",
-        params=lightgbm_params,
-        output_path="results/light_gbm_basic/",
-        col_subset=basic_cols,
+        params=params,
+        output_path=output_path,
+        col_subset=col_subset,
     )
+
+    # Score model on test data
     score_model_on_test(
         parquet_file="intermediate_data/test_data.parquet",
-        model_file="results/light_gbm_basic/best_lightgbm_model.pkl",
-        model_name="results/light_gbm_basic",
-        col_subset=basic_cols,
+        model_file=f"{output_path}best_lightgbm_model.pkl",
+        model_name=output_path,
+        col_subset=col_subset,
     )
 
+    # Plot SHAP summary
     plot_shap_summary(
-        model_path="results/light_gbm_basic/best_lightgbm_model.pkl",
+        model_path=f"{output_path}best_lightgbm_model.pkl",
         data_path="intermediate_data/cleaned_edited_feature_engineered_input.parquet",
-        output_dir="results/light_gbm_basic/",
-        col_subset=basic_cols,
-    )
-
-
-def fit_model_four(hyper_parm_tune: bool):
-    if hyper_parm_tune:
-        prompt_confirmation()
-        train_fit_light_gbm(
-            input_path="cleaned_edited_feature_engineered_input",
-            params=None,
-            output_path="results/light_gbm__hyperopt_and_feature_engineering/",
-            col_subset=None,
-        )
-    else:
-        # Load the pickled JSON file
-        with open(
-            r"results/light_gbm__hyperopt_and_feature_engineering/final_params.pkl",
-            "rb",
-        ) as file:
-            hyperparams = pickle.load(file)
-
-        # If the data inside the pickle file is JSON, convert it to a dictionary
-        if isinstance(hyperparams, str):  # In case it's a JSON string
-            hyperparams = json.loads(hyperparams)
-
-        # Calculate num_leaves based on max_depth
-        hyperparams["num_leaves"] = int(2 ** hyperparams["max_depth"] * 0.65)
-
-        train_fit_light_gbm(
-            input_path="cleaned_edited_feature_engineered_input",
-            params=hyperparams,
-            output_path="results/light_gbm__hyperopt_and_feature_engineering/",
-            col_subset=None,
-        )
-    score_model_on_test(
-        parquet_file="intermediate_data/test_data.parquet",
-        model_file="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
-        model_name="results/light_gbm__hyperopt_and_feature_engineering/",
-        col_subset=None,
-    )
-
-    plot_shap_summary(
-        model_path="results/light_gbm__hyperopt_and_feature_engineering/best_lightgbm_model.pkl",
-        data_path="intermediate_data/cleaned_edited_feature_engineered_input.parquet",
-        output_dir="results/light_gbm__hyperopt_and_feature_engineering/",
-        col_subset=None,
+        output_dir=output_path,
+        col_subset=col_subset,
     )
 
 

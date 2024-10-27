@@ -201,11 +201,11 @@ Getting to the results, Interpeting TF_IDF is nice in this chart. The solid ligh
 #### Table 3: The four modeling approaches
 
 | Model                             | Explanatory Variables            | Hyper Parameters                           | RMSE       | R²        |
-|-----------------------------------|--------------------|------------------------------|------------|-----------|
+|-----------------------------------|--------------------|-------------------|------------|-----------|
 | Ordinary Least Squares            | odometer       | `None`                                 | $12,202    | 29.1%    |
 | Log(Price) Least Squares                 | year, manufacturer, odometer, paint_color, state, title_status| `None`                                 | $11,077     | 51.9%    |
-| LightGBM                          | all standard variables      | `{'learning_rate': 0.1, 'max_depth': 6, 'lambda_l1': 0, 'lambda_l2': 0, 'num_leaves': 41` | $6200    | 81.4%   |
-| LightGBM with HyperOpt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  `{'learning_rate': 0.05, 'max_depth': 8,'boosting_type': "gbdt",'number_of_leaves':166,'min_data_in_leaf': 5000}` | $5,412 | 85.8%    |
+| LightGBM                          | all standard variables      |'learning_rate': 0.1, 'max_depth': 6, 'lambda_l1': 0, <br>'lambda_l2': 0, 'num_leaves': 41` | $6200    | 81.4%   |
+| LightGBM with HyperOpt and Text  | all standard variables, has_description?, is_carvana_ad?, 500 words (TF_IDF)|  'learning_rate': 0.05, 'max_depth': 8, 'number_of_leaves':166, 'min_data_in_leaf': 5000 | $5,412 | 85.8%    |
 
 *Note the last two models were tested on 5% hold out test data, while the first two were tested on the training data.* 
 
@@ -222,7 +222,7 @@ However, this approach has limitations. It is restricted to the data timeframe (
 
 To tie up the story, I will depict how our anonymous hero is using Model 4. I envision him using SHAP to create a waterfall plot that illustrates how the LightGBM model adjusts prices. This approach allows you to leverage subject matter expertise to validate, adjust, or disregard each prediction. Here’s an example, row 140 in the test set, using the final model. So we have a Chevy Sedan. Being a 2019 car, it drives the Price up \$11,700. The mention of leather drives the price up another \$1k, while navigation drives the prices up another \$2.2k. However, being a Cheverolet and being a sedan both drive the price down \$2k each. You can imagine our hero sitting in the cathode ray tub haze and saying well actually, this is a really deluxe custom naviagation system so maybe increase the price a bit more. And while Drive in our data set is NAN, I actually know its always FWD. So lets re-run this SHAP analysis with Drive = FWD. A meddling of subject matter expertise and quantative knowhow!
 
-<div style="display: flex; gap: 10px;">
+<div style="display: flex; justify-content: center;gap: 10px;">
     <img src="results/light_gbm__hyperopt_and_feature_engineering/waterfall for row 140.png" alt="Image 1"style="width:700px; height:auto;">
 </div>
 
