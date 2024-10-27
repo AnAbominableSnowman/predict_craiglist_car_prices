@@ -25,6 +25,7 @@ def fit_model_one(path: str = "intermediate_data/cleaned_and_edited_input.parque
     X = cars_imputed_missing_for_lin_regrs
 
     train_fit_score_linear_regression(X["odometer"], y, log=False, one_hot_encode=False)
+    # x.to_numpy()
 
 
 def fit_model_two(path: str = "intermediate_data/cleaned_and_edited_input.parquet"):
