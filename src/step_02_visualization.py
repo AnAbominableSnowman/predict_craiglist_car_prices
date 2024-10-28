@@ -177,6 +177,8 @@ def kde_of_category_by_value(
         plt.legend(
             title=f"{category_column.capitalize()}", fontsize=16, title_fontsize=18
         )
+        for text in plt.gca().get_legend().get_texts():
+            text.set_text(text.get_text().capitalize())
 
         output_path = Path(
             f"results/visuals/histogram_of_{value_column}_by_{category_column}.png"
