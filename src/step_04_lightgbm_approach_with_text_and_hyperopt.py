@@ -14,7 +14,7 @@ from pathlib import Path
 from step_05_shap_analysis import plot_shap_summary
 
 
-def fit_model(model_type: str, hyper_parm_tune: bool = False):
+def fit_model(model_type: str, hyper_parm_tune: bool = False) -> None:
     # Define basic model parameters and columns
     # we could also save this off as pickle, but not today
     basic_lightgbm_params = {
@@ -110,7 +110,9 @@ def load_and_prepare_data(filepath: str) -> pd.DataFrame:
     return cars
 
 
-def split_data(cars: pd.DataFrame, target_column: str):
+def split_data(
+    cars: pd.DataFrame, target_column: str
+) -> list[pd.DataFrame, pd.DataFrame, ndarray, ndarray]:
     y = cars.pop(target_column).to_numpy()
     X_train, X_val, y_train, y_val = train_test_split(
         cars, y, test_size=0.2, random_state=2018
@@ -124,7 +126,7 @@ def train_lightgbm(
     y_train: ndarray,
     y_val: ndarray,
     params: dict,
-):
+) -> list[lgb.booster, ndarray, dict]:
     categorical_columns = X_train.select_dtypes(include=["category"]).columns.tolist()
 
     train_data = lgb.Dataset(
@@ -152,7 +154,7 @@ def train_lightgbm(
     return model, y_pred, evals_result
 
 
-def evaluate_model(y_actual, y_pred, model_path):
+def evaluate_model(y_actual, y_pred, model_path) -> list[float, float]:
     rmse = root_mean_squared_error(y_actual, y_pred)
     r2 = r2_score(y_actual, y_pred)
     print(f"Root Mean Squared Error (RMSE): {rmse}")
@@ -172,7 +174,7 @@ def evaluate_model(y_actual, y_pred, model_path):
     return rmse, r2
 
 
-def plot_results(y_actual, y_pred, save_path):
+def plot_results(y_actual, y_pred, save_path) -> None:
     plt.figure()
     residuals = y_actual - y_pred
     plt.scatter(y_pred, residuals, edgecolor="k", alpha=0.4)
@@ -189,7 +191,7 @@ def plot_results(y_actual, y_pred, save_path):
     plt.close()
 
 
-def objective(params, cars, target_column):
+def objective(params, cars, target_column) -> None:
     selected_features = [col for col in cars.columns if col != target_column]
 
     X = cars[selected_features]
@@ -293,7 +295,7 @@ def train_fit_light_gbm(
         pickle.dump(final_params, file)
 
 
-def plot_rmse_over_rounds(evals_result, save_path):
+def plot_rmse_over_rounds(evals_result, save_path) -> None:
     # light gbm has a built in method to do this BUT
     # it wasn't as good as I'd like.
     plt.figure(figsize=(10, 5))
@@ -317,7 +319,7 @@ def plot_rmse_over_rounds(evals_result, save_path):
 
 def score_model_on_test(
     parquet_file: str, model_file: str, model_name: str, col_subset
-):
+) -> None:
     test_data = load_and_prepare_data(parquet_file)
     y_test = test_data.pop("price").to_numpy()
     if col_subset:
@@ -334,7 +336,7 @@ def score_model_on_test(
     plot_results(y_test, y_pred, model_name)
 
 
-def prompt_confirmation():
+def prompt_confirmation() -> None:
     # Prompt the user for confirmation
     response = (
         input(

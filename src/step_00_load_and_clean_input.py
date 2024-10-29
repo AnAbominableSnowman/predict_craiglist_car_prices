@@ -4,7 +4,7 @@ import zipfile
 from pathlib import Path
 
 
-def unzip_and_clean_data():
+def unzip_and_clean_data() -> None:
     # pull in and unzip the zip from kaggle
     cars = unzip_and_load_csv(r"inputs/vehicles.csv.zip", r"inputs/vehicles_unzipped")
 
