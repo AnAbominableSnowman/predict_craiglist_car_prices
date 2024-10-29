@@ -126,7 +126,7 @@ def plot_results(y_test: ndarray, y_pred: ndarray, directory) -> None:
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
     plt.xlabel("Predicted")
     plt.ylabel("Residuals")
-    if "simple" in directory:
+    if "Simple" in directory:
         plt.title("Simple Linear Regression of Price by Odometer")
     else:
         plt.title("Log Price Linear Regression")
