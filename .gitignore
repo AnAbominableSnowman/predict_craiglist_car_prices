@@ -4,7 +4,6 @@
 /shap_plots/
 /intermediate_data/
 /to be deleted/
-*.pyc
 /pycache/
 /inputs/
 /src/__pycache__/

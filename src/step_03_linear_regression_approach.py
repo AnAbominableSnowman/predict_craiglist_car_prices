@@ -9,9 +9,12 @@ import os
 from numpy import ndarray, log
 import polars as pl
 from sklearn.impute import SimpleImputer
+from statsmodels.regression.linear_model import RegressionResultsWrapper
 
 
-def fit_model_one(path: str = "intermediate_data/cleaned_and_edited_input.parquet"):
+def fit_model_one(
+    path: str = "intermediate_data/cleaned_and_edited_input.parquet",
+) -> None:
     cars = pl.read_parquet(path)
     # linear regression won't handle this missing vals nicely. So here I,
     # encode them with mean or mode. This isn't as elegant as possible.
@@ -28,7 +31,9 @@ def fit_model_one(path: str = "intermediate_data/cleaned_and_edited_input.parque
     # x.to_numpy()
 
 
-def fit_model_two(path: str = "intermediate_data/cleaned_and_edited_input.parquet"):
+def fit_model_two(
+    path: str = "intermediate_data/cleaned_and_edited_input.parquet",
+) -> None:
     cars = pl.read_parquet(path)
     covariates = [
         "odometer",
@@ -56,7 +61,7 @@ def fit_model_two(path: str = "intermediate_data/cleaned_and_edited_input.parque
 
 def train_fit_score_linear_regression(
     X: pd.DataFrame, y: ndarray, log: bool, one_hot_encode: bool
-):
+) -> RegressionResultsWrapper:
     if one_hot_encode:
         X = one_hot_columns(X)
     # Add a constant term for the intercept (as statsmodels does not include it by default)
@@ -85,12 +90,12 @@ def train_fit_score_linear_regression(
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-    plot_results(y_test, y_pred, log, directory)
+    plot_results(y_test, y_pred, directory)
     print_results(y_test, y_pred, model, directory)
     return model
 
 
-def plot_results(y_test: ndarray, y_pred: ndarray, log: bool, directory) -> None:
+def plot_results(y_test: ndarray, y_pred: ndarray, directory) -> None:
     # Plot predicted vs actual values
     plt.figure(figsize=(10, 5))
 
@@ -100,7 +105,6 @@ def plot_results(y_test: ndarray, y_pred: ndarray, log: bool, directory) -> None
     plt.plot([y_test.min(), y_test.max()], [y_test.min(), y_test.max()], "r--", lw=2)
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
-    plt.title("Predicted vs Actual")
 
     # Plot 2: Residuals plot
     plt.subplot(1, 2, 2)
@@ -122,7 +126,10 @@ def plot_results(y_test: ndarray, y_pred: ndarray, log: bool, directory) -> None
     plt.axhline(y=0, color="r", linestyle="--", lw=2)
     plt.xlabel("Predicted")
     plt.ylabel("Residuals")
-    plt.title("Residuals Plot")
+    if "Simple" in directory:
+        plt.title("Simple Linear Regression of Price by Odometer")
+    else:
+        plt.title("Log Price Linear Regression")
 
     plt.tight_layout()
 

@@ -10,12 +10,16 @@ We have 5 steps here. Clean data, feature engineer data, visualize data, fit a l
 I wish I'd have been better at saving off the results that made me pursue certain paths or stopped me from further pursuing other paths. Some results are still likely in the past commits but if you have questions, feel free to leave and issue. 
 
 ### FAQ on running it:
-Requirements are stored in requirements.txt and I'm using Python 3.11.9 here. Y_data's profiling report is the best at easy but incredible EDA visualizing but it's a finicky beast. If you are running into issues, not running `generate_ydata_eda` in `src/step_02_visualization.py` will drastically reduce your number of installations and issues. 
+***Where is Requirements?*** 
+Requirements are stored in requirements.txt and I'm using Python 3.11.9 here.
 
-Where are all your input files and intermediate .parquet files? I have them ignored for git purposes. They are particularly large and hit GH's 100mb limit. The proccessing steps are very fast, less then a minute on my rather average laptop, so the juice isn't worth the squeeze. To get the data, download it from kaggle here. I considered using the kaggle API, but that would invovle sharing my key(a bad idea) or requiring you to get your own Key, way too much work. Best option is for you to [download it yourself.](https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data/data) 
+***I'm getting issues with Y_data profiling and/or certain versions of things don't play well together?*** 
+Y_data's profiling report is the best at easy but incredible EDA visualizing but it's a finicky beast. If you are running into issues, not running `generate_ydata_eda` in `src/step_02_visualization.py` will drastically reduce your number of installations and issues. 
 
-I have throughly commented most functions and the white paper also covers a lot so this readme will be sparse. As always, if you have further questions, feel free to post them as issues. 
+***Where are all your input files and intermediate .parquet files?*** I have them ignored for git purposes. They are particularly large and hit GH's 100mb limit. The proccessing steps are very fast, less then a minute on my rather average laptop, so the juice isn't worth the squeeze. To get the data, download it from kaggle here. I considered using the kaggle API, but that would involve sharing my key(a bad idea) or requiring you to get your own Key, way too much work. Best option is for you to [download it yourself.](https://www.kaggle.com/datasets/austinreese/craigslist-carstrucks-data/data) 
 
-What style is this code? I use astral's Ruff. I can't recommend it enough. 
+***Why is the readme so sparse?*** I have throughly commented most functions and the white paper also covers a lot so this readme will be sparse. As always, if you have further questions, feel free to post them as issues. 
 
-Any VENV? Yes, I have a .venv but its too large for GH. You should be able to replicate with requirements.txt.
+***What style is this code?*** I use astral's Ruff. I can't recommend it enough. 
+
+***Any VENV?*** Yes, I have a .venv but its too large for GH. You should be able to replicate with requirements.txt. If not, let me know.

@@ -4,11 +4,12 @@ import shap
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
+from lightgbm import booster
 
 
 def plot_shap_summary(
     model_path: str, data_path: str, output_dir: str, col_subset: list
-):
+) -> None:
     """Plot SHAP summary and dependence plots for all categorical variables."""
     os.makedirs(output_dir, exist_ok=True)
 
@@ -31,7 +32,7 @@ def plot_shap_summary(
 
 def plot_shap_waterfall(
     shap_values, data: pd.DataFrame, output_dir: str, row_index: int
-):
+) -> None:
     """Plot SHAP waterfall plot for a specific row."""
     os.makedirs(output_dir, exist_ok=True)
 
@@ -49,14 +50,14 @@ def plot_shap_waterfall(
     plt.close()
 
 
-def load_model(model_path: str):
+def load_model(model_path: str) -> booster:
     """Load a pickled model."""
     with open(model_path, "rb") as file:
         model = pickle.load(file)
     return model
 
 
-def load_data(data_path: str, col_subset: list = None):
+def load_data(data_path: str, col_subset: list = None) -> pd.DataFrame:
     """Load dataset and process categorical columns."""
     cars = pd.read_parquet(data_path)
     if col_subset is not None:
@@ -74,7 +75,7 @@ def load_data(data_path: str, col_subset: list = None):
     return cars
 
 
-def shap_analysis(model, X: pd.DataFrame):
+def shap_analysis(model, X: pd.DataFrame) -> shap.TreeExplainer:
     """Perform SHAP analysis and return SHAP values."""
     explainer = shap.TreeExplainer(model)
     shap_values = explainer(X)

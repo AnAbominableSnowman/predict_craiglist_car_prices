@@ -19,7 +19,7 @@ def generate_profiling_report(
 
 def visuals_for_report_hist_and_first_kde(
     path: str = r"intermediate_data/cleaned_and_edited_input.parquet",
-):
+) -> None:
     cars = pl.read_parquet(path)
     cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
 
@@ -30,7 +30,7 @@ def visuals_for_report_hist_and_first_kde(
 
 def visuals_for_report_second_kde_and_data_dict(
     path: str = r"intermediate_data/cleaned_and_edited_input.parquet",
-):
+) -> None:
     cars = pl.read_parquet(path)
     cars = replace_rare_and_null_manufacturer(cars, 3, "Other")
 
@@ -39,7 +39,7 @@ def visuals_for_report_second_kde_and_data_dict(
     count_empty_description_rows(cars)
 
 
-def generate_ydata_eda(raw_or_clean: str):
+def generate_ydata_eda(raw_or_clean: str) -> None:
     if raw_or_clean.lower == "raw":
         raw_cars = pl.read_parquet("intermediate_data/raw_input.parquet")
         generate_profiling_report(
@@ -118,13 +118,15 @@ def plot_histogram(data: pl.DataFrame, column: str) -> None:
     # Set x-axis label based on column type
     if column.lower() == "price":
         plt.xlabel(f"{column.capitalize()} in US Dollars", fontsize=16)
+
     elif column.lower() == "odometer":
         plt.xlabel(f"{column.capitalize()} in Miles", fontsize=16)
+
     else:
         plt.xlabel(column.capitalize(), fontsize=16)
 
     plt.ylabel("Density", fontsize=16)
-    plt.title(f"Histograms of {column.capitalize()}", fontsize=18)
+    plt.title(f"{column.capitalize()}", fontsize=18)
     plt.grid(axis="y")
     plt.tick_params(axis="both", labelsize=14)
     # Specify output path for saving the plot
@@ -165,14 +167,16 @@ def kde_of_category_by_value(
 
         if value_column.lower() == "price":
             plt.xlabel(f"{value_column.capitalize()} in US Dollars", fontsize=18)
+            plt.title("Vehicle Prices by Manufacturer", fontsize=18)
         elif value_column.lower() == "odometer":
             plt.xlabel(f"{value_column.capitalize()} in Miles", fontsize=18)
+            plt.title("Odometer Mileage by Manufacturer", fontsize=18)
 
         plt.ylabel("Density", fontsize=18)
-        plt.title(
-            f"Histograms of {value_column.capitalize()} by {category_column.capitalize()}",
-            fontsize=18,
-        )
+        # plt.title(
+        #     f"Histograms of {value_column.capitalize()} by {category_column.capitalize()}",
+        #     fontsize=18,
+        # )
         plt.tick_params(axis="both", labelsize=14)
         plt.legend(
             title=f"{category_column.capitalize()}", fontsize=16, title_fontsize=18
@@ -196,7 +200,9 @@ def kde_of_category_by_value(
         )
 
 
-def percent_below_threshold(cars: pl.DataFrame, threshold: float, col_to_check: str):
+def percent_below_threshold(
+    cars: pl.DataFrame, threshold: float, col_to_check: str
+) -> None:
     count_below_threshold = cars.filter(pl.col(col_to_check) < threshold).height
     total_rows = cars.height
     percentage_below_threshold = (
