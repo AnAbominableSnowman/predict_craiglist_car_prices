@@ -67,11 +67,11 @@ The target variable is the price, represented in US Dollars. The dataset include
 
 ## Exploratory Data Analysis (EDA)
 
-For a thorough EDA using `y_data_profiling`, see the visualizations on a subsample of the data from [before processing](results/data_profile_cleaned_subsampled_to_one_percent.html) and [after processing](results/data_profile_raw_subsampled_to_one_percent.html). In the interest of space, I will mention the most pertinent details. Price and odometer are heavily right-skewed; some odometer's are equivalent to twenty round trips to the moon. It’s safe to say there are some data quality issues, which I will address in [data preprocessing](#data-preprocessing-and-feature-engineering). Another pertinent topic is the high frequency of Carvana ads at 15%; since they exhibit higher data quality and more consistency across ads, they form an interesting part of the puzzle. However, their descriptions are mostly identical boilerplate across many ads. 
+For a thorough EDA using `y_data_profiling`, see the visualizations on a subsample of the data from [before processing](results_final/data_profile_cleaned_subsampled_to_one_percent.html) and [after processing](results_final/data_profile_raw_subsampled_to_one_percent.html). In the interest of space, I will mention the most pertinent details. Price and odometer are heavily right-skewed; some odometer's are equivalent to twenty round trips to the moon. It’s safe to say there are some data quality issues, which I will address in [data preprocessing](#data-preprocessing-and-feature-engineering). Another pertinent topic is the high frequency of Carvana ads at 15%; since they exhibit higher data quality and more consistency across ads, they form an interesting part of the puzzle. However, their descriptions are mostly identical boilerplate across many ads. 
 
 <div style="display: flex; gap: 10px;">
-    <img src="results\visuals\histogram_of_price.png" style="width:500px; height:auto;">
-    <img src="results\visuals\histogram_of_odometer.png" style="width:500px; height:auto;">
+    <img src="results_final\visuals\histogram_of_price.png" style="width:500px; height:auto;">
+    <img src="results_final\visuals\histogram_of_odometer.png" style="width:500px; height:auto;">
 </div>
 
 ***Figure 1***: *Notice the right skew of both fields and the spike of 0s in price. Not shown are 346, and 3032 observations greater then \$125,000 and 300,000 miles respectively*
@@ -79,8 +79,8 @@ For a thorough EDA using `y_data_profiling`, see the visualizations on a subsamp
 Digging into correlations below, there are relationships between price, age, and odometer reading. Older vehicles typically have more miles and are worth less. But miles and age are highly collinear, it is rare to find high mileage young cars and vice versa. So untangling mileage from age is a complex problem that is be beyond the scope of this paper. I also notice correlations between [word frequency, i.e., TF_IDF](#feature-engineering) and odometer readings, suggesting that certain words are used more or less frequently depending on car mileage; this aligns with expectations. Words like reliable, typically, describe family vans not sport cars. In general, words seem negatively correlated with odometer. Which makes sense as more verbose ads are going to be associated with nicer, newer, more expensive vehicles. Finally, the manufacturer shows a correlation with the number of cylinders and transmission type, which again conforms to common sense.
 
 <div style="display: flex; gap: 10px;">
-<img src="results/visuals/corrgram_raw.png"  style="width:500px; height:auto;" />
-<img src="results/visuals/corrgram_cleaned.png" style="width:500px; height:auto;" />
+<img src="results_final/visuals/corrgram_raw.png"  style="width:500px; height:auto;" />
+<img src="results_final/visuals/corrgram_cleaned.png" style="width:500px; height:auto;" />
 </div>
 
 ***Figure 2***: *The Correlation gram for the raw and cleaned data respectively. Correlations here are Spearman for numeric columns and Cramer V correlations for any non-numeric correlations.* 
@@ -88,8 +88,8 @@ Digging into correlations below, there are relationships between price, age, and
 Additionally, about six percent of the rows appear to be exact duplicates of other rows. While they could represent truly different automobiles, the exact matching of price, location, odometer, color, etc., strains credulity, so I will drop these results. Likely people are reposting the same ad to make their ad appear new. A final correlation I wanted to examine was how price and mileage vary by manufacturer, an important variable. Interestingly, some manufacturers have distinct patterns. BMW seems to have more low mileage cars on the market. Perhaps  due to noticeably higher costs of maintenance, gas and insurance, people sell earlier. Ram's higher average price is baffling as it disagrees with [Motor Trend's reporting](https://www.motortrend.com/features/worst-resale-value-pickup-trucks/). Motor Trend has three of the top 10 worst reselling trucks as Ram trucks.
 
 <div style="display: flex; gap: 10px;">
-    <img src="results/visuals/histogram_of_odometer_by_manufacturer.png" style="width:550px; height:auto;">
-    <img src="results/visuals/histogram_of_price_by_manufacturer.png" style="width:550px; height:auto;">
+    <img src="results_final/visuals/histogram_of_odometer_by_manufacturer.png" style="width:550px; height:auto;">
+    <img src="results_final/visuals/histogram_of_price_by_manufacturer.png" style="width:550px; height:auto;">
 </div>
 
 ***Figure 3***:  *Notice how BMW and Ram, respectively, seem to buck the trend. Note only popular manufacturers shown here.* 
@@ -153,8 +153,8 @@ The second strategy for addressing an underfitted model involved introducing add
 Reviewing the results below, the negative predictions have disappeared and the model now explains 40% of the variability in price. Furthermore, RMSE has dropped by about \$1,000. While accuracy has improved, the model grew from two parameters to 80. This model also fails all the assumptions of linear regression.
 
 <div style="display: flex; gap: 10px;">
-    <img src="results/Simple Linear Regression of Price by Odometer/residuals.png" style="width:500px; height:auto;">
-    <img src="results/Log price Linear Regression/residuals.png" style="width:500px; height:auto;">
+    <img src="results_final/Simple Linear Regression of Price by Odometer/residuals.png" style="width:500px; height:auto;">
+    <img src="results_final/Log price Linear Regression/residuals.png" style="width:500px; height:auto;">
 </div>
 
 ***Figure 4***: *Residuals of the simple least squares regression and log price regression respectively. Note how many predictions in the residuals are actually negative in the simple least squares regression.*  
@@ -176,8 +176,8 @@ Odometer has a similar but opposite story for obvious reasons, more mileage, che
 Categorical variables are a bit harder to use in SHAP summary plots as they lack the clear sense of bigger to smaller and the resulting colorings. However, some categorical variables do tell a story. The far-right skew in the region seems to suggest region usually doesn't tell affect price much, but it has occasionally driven price up substantially. I haven't figured out how to pinpoint what values these are yet but I suspect they correspond to high-cost locations. Similarly, title status mostly has no effect on value, but certain titles can severely decrease the price. This aligns with prior EDA, where most titles were clean, while some were salvage, parts, or lien. These titles mean the car is in terrible shape or the car is involved in a loan. All of which can steeply drive down a sale price.
 
 <div style="display: flex; gap: 10px;">
-    <img src="results\light_gbm_basic/shap_summary_plot.png" style="width:500px; height:auto;">
-    <img src="results\light_gbm_basic\rmse_over_rounds.png" style="width:550px; height:auto;">
+    <img src="results_final\light_gbm_basic/shap_summary_plot.png" style="width:500px; height:auto;">
+    <img src="results_final\light_gbm_basic\rmse_over_rounds.png" style="width:550px; height:auto;">
 </div>
 
 ***Figure 5***: *The SHAP Summary and RMSE over training for model three.*
@@ -193,8 +193,8 @@ Getting to the results, interpreting TF_IDF is nice in this chart. The solid lig
 Finally, two unclear cases stand out that required some investigating: tfidf_67l and tfidf_1500. Once again, trucks are the answer. 1500 traditionally denotes a light duty pick up capable of carrying half a ton. Truck brands such as Chevrolet and Ram still describe their low end, cheaper trucks as 1500's. Which is why some ads have high values of 1500, ie, the word 1500 is in the description a lot, with lower SHAP values as they are lower end, cheaper trucks. 6.7L refers to a very large diesel engine on the largest of large vehicles which explains its positive correlation with expensive vehicles.   
 
 <div style="display: flex; gap: 10px;">
-    <img src="results/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" style="width:500px; height:auto;">
-    <img src="results\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" style="width:550px; height:auto;">
+    <img src="results_final/light_gbm__hyperopt_and_feature_engineering/shap_summary_plot.png" style="width:500px; height:auto;">
+    <img src="results_final\light_gbm__HyperOpt_and_feature_engineering\rmse_over_rounds.png" style="width:550px; height:auto;">
 </div>
 
 ***Figure 6***: *SHAP summary for trucks and RMSE over training. A bit more overfitting here and words related to trucks show up a lot in the SHAP analysis.*
@@ -224,7 +224,7 @@ However, this approach has limitations. It is restricted to the data timeframe (
 To tie up the story, I will depict how our anonymous hero is using Model 4. I envision him using SHAP to create a waterfall plot that illustrates how the LightGBM model adjusts prices. This approach allows the user to leverage subject matter expertise to validate, adjust, or disregard each prediction. Here’s an example, row 140 in the test set, using the final model. It's a newish Chevy Sedan. Being a 2019 car, this drives the price up \$11,700. The mention of leather drives the price up another \$1k, while navigation drives the prices up another \$2.2k. However, being a Chevrolet and being a sedan, both drive the price down \$2k each. You can imagine our hero sitting in the cathode ray tube haze and saying "well actually, this is a really deluxe custom navigation system so maybe increase the price a bit more. And while Drive in NAN in the data set, I actually know it's always FWD. So, let's re-run this SHAP analysis with Drive = FWD." A melding of subject matter expertise and quantitative knowhow!
 
 <div style="display: flex; justify-content: center;gap: 10px;">
-    <img src="results/light_gbm__hyperopt_and_feature_engineering/waterfall for row 140.png" style="width:700px; height:auto;">
+    <img src="results_final/light_gbm__hyperopt_and_feature_engineering/waterfall for row 140.png" style="width:700px; height:auto;">
 </div>
 
 ***Figure 7***: *SHAP waterfall plot giving the anonymous hero, the model prediction and more importantly why!*
@@ -263,11 +263,11 @@ https://docs.pola.rs/
 ### Linear Regression Model Summary
 
 <div style="display: flex; gap: 10px;">
-    <img src="results/Simple Linear Regression of Price by Odometer/ols_results.png" style="width:500px; height:auto;">
-    <img src="results/Log price Linear Regression/Log_mls_results.png" style="width:500px; height:auto;">
+    <img src="results_final/Simple Linear Regression of Price by Odometer/ols_results.png" style="width:500px; height:auto;">
+    <img src="results_final/Log price Linear Regression/Log_mls_results.png" style="width:500px; height:auto;">
 </div>
 
-Here the OLS is on the left and Log Price MLS on the right. Not all 80 terms are shown for Log Price MLS for the sake of space and time. The whole summary can be found [here](results/Log%20price%20Linear%20Regression/ols_summary.txt).
+Here the OLS is on the left and Log Price MLS on the right. Not all 80 terms are shown for Log Price MLS for the sake of space and time. The whole summary can be found [here](results_final/Log%20price%20Linear%20Regression/ols_summary.txt).
 
 ### Hyperparameter Tuning
 Before talking about hyperparameter optimization, I should explain what hyperparameters are. I like to think of them as meta-settings set outside and before the process that can be learned over many fittings of the model. The analogy I use is what if we were about to play a game of soccer but first, we tweaked how long the grass on the field was, is it raining, and is the field slanted towards or away from the net. Each soccer games would be soccer but tweaking any of these meta (i.e. hyper) parameters would dramatically change the game. After a while, you'd find the best and fairest games are played on level fields, without much rain on a clear beautiful day. 
