@@ -44,26 +44,26 @@ A generous contributor has scraped 463,000 car postings from Craigslist over a s
 The target variable is the price, represented in US Dollars. The dataset includes eighteen useful covariates which I lay out in the data dictionary below. Subject knowledge suggests that the most important variables will be manufacturer, year, odometer and description. Note to the reader, I will use cars, automobiles and vehicles interchangeably throughout the text. 
 
 #### Table 1: Data Dictionary
-| Column Name     | Data Type | Description                                                      | % Missing/NA | % Zero | % Distinct |
-|-----------------|-----------|------------------------------------------------------------------|-----------|------------|----------|
-| price           | Float     | Target variable representing the price in US Dollars             | 0%        | 0%        | .1%        |
-| region          | String    | The region or metro area where the vehicle is located            | 7.7%        | NA        | 3.7%        |
-| year            | Integer   | Year of manufacture of the vehicle                               | 0.3%        | 0%        | 0%        |
-| manufacturer    | String    | The manufacturer (e.g., Ram, Jeep)                               | 4.1%        | NA        | 0%        |
-| model           | String    | The vehicle's model (e.g., Silverado, Forester)                  | 1.2%        | NA        | 7%        |
-| condition       | String    | Condition of the vehicle (e.g., good, fair)                      | 40.8%       | NA         | 0%        |
-| cylinders       | String   | Number of cylinders (e.g., 4 cylinders, 6 cylinders)              | 41.6%        | NA        | 0%        |
-| fuel            | String    | Type of fuel used (e.g., diesel, gas)                            | .7%        | NA         | 0%        |
-| odometer        | Float     | Miles the vehicle has traveled                                   | 1%        | 5%        | 24.6%        |
-| title_status    | String    | Status of the vehicle's title (e.g., rebuilt, clean)             | 1.9%        | NA         | 0%        |
-| transmission    | String    | Type of transmission (e.g., automatic, manual)                   | 0.6%        | NA         | 0%        |
-| drive           | String    | Drive type (e.g., FWD, RWD)                                      | 30.6%       | NA         | 0%        |
-| type            | String    | Type of vehicle (e.g., sedan, truck)                             | 21.8%        | NA         | 0%        |
-| paint_color     | String    | Exterior paint color (e.g., white, black)                        | 30.5%     |   NA         | 0%        |
-| description     | String    | A description of the vehicle by the seller                        | 0.1%        | NA         | 84.5%        |
-| state           | String    | U.S. state where the vehicle is being sold                       | 0%        | NA      | 0%        |
-| lat             | Float     | Latitude of the vehicle’s location                               | 1.5%       | 0%       | 12.5%        |
-| long            | Float     | Longitude of the vehicle’s location                              | 1.5%       | 0%       | 12.6%        |
+| Column Name     | Data Type | Description                                                      | % Missing/NA | % Zero |
+|-----------------|-----------|------------------------------------------------------------------|-----------|------------|
+| price           | Float     | Target variable representing the price in US Dollars             | 0%        | 0%        |
+| region          | String    | The region or metro area where the vehicle is located            | 7.7%        | NA        |
+| year            | Integer   | Year of manufacture of the vehicle                               | 0.3%        | 0%        | 
+| manufacturer    | String    | The manufacturer (e.g., Ram, Jeep)                               | 4.1%        | NA        | 
+| model           | String    | The vehicle's model (e.g., Silverado, Forester)                  | 1.2%        | NA        | 
+| condition       | String    | Condition of the vehicle (e.g., good, fair)                      | 40.8%       | NA         |
+| cylinders       | String   | Number of cylinders (e.g., 4 cylinders, 6 cylinders)              | 41.6%        | NA        |
+| fuel            | String    | Type of fuel used (e.g., diesel, gas)                            | .7%        | NA         | 
+| odometer        | Float     | Miles the vehicle has traveled                                   | 1%        | 5%        | 
+| title_status    | String    | Status of the vehicle's title (e.g., rebuilt, clean)             | 1.9%        | NA         | 
+| transmission    | String    | Type of transmission (e.g., automatic, manual)                   | 0.6%        | NA         | 
+| drive           | String    | Drive type (e.g., FWD, RWD)                                      | 30.6%       | NA         | 
+| type            | String    | Type of vehicle (e.g., sedan, truck)                             | 21.8%        | NA         | 
+| paint_color     | String    | Exterior paint color (e.g., white, black)                        | 30.5%     |   NA         | 
+| description     | String    | A description of the vehicle by the seller                        | 0.1%        | NA         |
+| state           | String    | U.S. state where the vehicle is being sold                       | 0%        | NA      |
+| lat             | Float     | Latitude of the vehicle’s location                               | 1.5%       | 0%       | 
+| long            | Float     | Longitude of the vehicle’s location                              | 1.5%       | 0%       | 
 
 ## Exploratory Data Analysis (EDA)
 
