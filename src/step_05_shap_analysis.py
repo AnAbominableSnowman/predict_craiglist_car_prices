@@ -4,7 +4,6 @@ import shap
 import pandas as pd
 import matplotlib.pyplot as plt
 import time
-from lightgbm import booster
 
 
 def plot_shap_summary(
@@ -50,7 +49,7 @@ def plot_shap_waterfall(
     plt.close()
 
 
-def load_model(model_path: str) -> booster:
+def load_model(model_path: str):
     """Load a pickled model."""
     with open(model_path, "rb") as file:
         model = pickle.load(file)

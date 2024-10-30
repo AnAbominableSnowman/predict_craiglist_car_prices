@@ -163,7 +163,7 @@ def evaluate_model(y_actual, y_pred, model_path) -> list[float, float]:
     results = {"RMSE": rmse, "R-squared": r2}
 
     # Define the model path
-    model_path = Path(model_path)  # Update with your actual path
+    model_path = Path(model_path)
 
     # Create the directory if it does not exist
     model_path.mkdir(parents=True, exist_ok=True)
@@ -209,8 +209,8 @@ def objective(params, cars, target_column) -> None:
         "max_depth": int(params["max_depth"]),
         "min_data_in_leaf": 2000,  # Fixed value
         "num_leaves": int(2 ** int(params["max_depth"]) * 0.65),
-        "lambda_l1": params["lambda_l1"],  # Include L1 regularization
-        "lambda_l2": params["lambda_l2"],  # Include L2 regularization
+        "lambda_l1": params["lambda_l1"],
+        "lambda_l2": params["lambda_l2"],
         "verbose": -1,
         "random_seed": 2018,
     }
@@ -255,7 +255,7 @@ def train_fit_light_gbm(
             algo=tpe.suggest,
             max_evals=50,
         )
-        # Convert float depth to int
+
         best_params["max_depth"] = int(best_params["max_depth"])
         model_name = model_name + "Hyperopt"
     else:
@@ -272,8 +272,8 @@ def train_fit_light_gbm(
         "learning_rate": best_params["learning_rate"],
         "max_depth": best_params["max_depth"],
         "num_leaves": int(2 ** int(best_params["max_depth"]) * 0.65),
-        "lambda_l1": best_params["lambda_l1"],  # Include L1 regularization
-        "lambda_l2": best_params["lambda_l2"],  # Include L2 regularization
+        "lambda_l1": best_params["lambda_l1"],
+        "lambda_l2": best_params["lambda_l2"],
         "verbose": -1,
         "random_seed": 2018,
     }
@@ -321,9 +321,9 @@ def score_model_on_test(
     parquet_file: str, model_file: str, model_name: str, col_subset
 ) -> None:
     test_data = load_and_prepare_data(parquet_file)
-    y_test = test_data.pop("price").to_numpy()
     if col_subset:
         test_data = test_data[col_subset]
+    y_test = test_data.pop("price").to_numpy()
 
     # Load the trained model
     with open(model_file, "rb") as file:
@@ -340,7 +340,9 @@ def prompt_confirmation() -> None:
     # Prompt the user for confirmation
     response = (
         input(
-            "You are about to manually tune a Light GBM model. This takes about 3 hours on my modest machine. Are you sure you wish to proceed? (yes/no): "
+            """You are about to manually tune a Light GBM model. 
+            This takes about 3 hours on my modest machine. 
+            Are you sure you wish to proceed? (yes/no): """
         )
         .strip()
         .lower()
@@ -349,7 +351,9 @@ def prompt_confirmation() -> None:
     # Check the response
     if response in ["yes", "y"]:
         print(
-            "User confirmed to proceed! You can cancel at any time. My hyper optimized parameters are stored in a different folder and can be used if you over write them here."
+            """User confirmed to proceed! You can cancel at any time. 
+            My hyper optimized parameters are stored in a different folder 
+            and can be used if you over write them here."""
         )
     elif response in ["no", "n"]:
         print("User canceled the action.")
