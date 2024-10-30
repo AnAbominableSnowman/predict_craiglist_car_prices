@@ -14,8 +14,8 @@ from step_01_feature_engineering import (
     create_tf_idf_cols,
    
 )
-from src.step_03_linear_regression_approach import train_fit_linear_regression, fill_missing_values_column_level,
-from src.step_04_lightgbm_approach_with_text_and_hyperopt import (
+from step_03_linear_regression_approach import train_fit_linear_regression, fill_missing_values_column_level,
+from step_04_lightgbm_approach_with_text_and_hyperopt import (
     train_fit_light_gbm,
 )
 import polars as pl
